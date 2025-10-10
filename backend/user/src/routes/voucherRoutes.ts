@@ -1,0 +1,11 @@
+import { Router } from "express";
+import { authMiddleware } from "../middleware/auth";
+import * as voucherController from "../controllers/voucherController";
+const router = Router();
+router.post("/", authMiddleware, voucherController.createVoucher);
+router.get("/", voucherController.getAllVouchers);
+router.get("/valid", voucherController.getValidVouchers);
+router.get("/:code", voucherController.getVoucherByCode);
+router.put("/:id", authMiddleware, voucherController.updateVoucher);
+router.delete("/:id", authMiddleware, voucherController.deleteVoucher);
+export default router;

@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+package-lock.json
+
+# Environment variables
+.env
+
+# IDE / Editor
+.vscode/
+.idea/
+
+# Sequelize migrations lock file
+.sequelize/
+
+# TypeScript
+tsconfig.json
