@@ -1,6 +1,10 @@
 import { Response } from "express";
 import { AuthRequest } from "../middleware/auth";
-import { createProductRatingSvc, getProductRatingsSvc } from "../services/ratingService";
+import {
+  createProductRatingSvc,
+  getProductRatingsSvc,
+  updateUserRatingSvc,
+} from "../services/ratingService";
 
 export async function listProductRatings(req: AuthRequest, res: Response) {
   try {
@@ -11,7 +15,9 @@ export async function listProductRatings(req: AuthRequest, res: Response) {
     const data = await getProductRatingsSvc(productId);
     return res.json(data);
   } catch (e: any) {
-    return res.status(e?.status || 500).json({ message: e?.message || "Internal Server Error" });
+    return res
+      .status(e?.status || 500)
+      .json({ message: e?.message || "Internal Server Error" });
   }
 }
 
@@ -25,10 +31,36 @@ export async function createProductRating(req: AuthRequest, res: Response) {
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-    const data = await createProductRatingSvc(productId, Number(userId), req.body);
+    const data = await createProductRatingSvc(
+      productId,
+      Number(userId),
+      req.body
+    );
     return res.status(201).json(data);
   } catch (e: any) {
-    return res.status(e?.status || 500).json({ message: e?.message || "Internal Server Error" });
+    return res
+      .status(e?.status || 500)
+      .json({ message: e?.message || "Internal Server Error" });
   }
 }
 
+export async function updateUserRating(req: AuthRequest, res: Response) {
+  try {
+    const ratingId = Number(req.params.id);
+    if (Number.isNaN(ratingId)) {
+      return res.status(400).json({ message: "Invalid rating id" });
+    }
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const data = await updateUserRatingSvc(ratingId, Number(userId), req.body);
+    return res.json(data);
+  } catch (e: any) {
+    return res
+      .status(e?.status || 500)
+      .json({ message: e?.message || "Internal Server Error" });
+  }
+}
+
+// Revoking ratings is no longer supported

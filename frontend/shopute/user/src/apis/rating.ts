@@ -16,3 +16,10 @@ export async function createProductRating(productId: number, payload: CreateRati
   return data as { id: number; reward?: { type: string; points?: number; code?: string; percent?: number; expiresAt?: string } };
 }
 
+export async function updateRating(
+  ratingId: number,
+  payload: { rating?: number; comment?: string }
+) {
+  const { data } = await api.patch(`/ratings/${ratingId}`, payload);
+  return data as any;
+}
