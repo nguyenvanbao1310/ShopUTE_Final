@@ -17,6 +17,10 @@ router.post("/login", async (req: Request, res: Response) => {
   try {
     // 1. Tìm user theo email
     const user = await User.findOne({ where: { email } });
+    // Kiểm tra trạng thái hoạt động của tài khoản sớm
+    if (user && (user as any).isActive === false) {
+      return res.status(403).json({ message: "Tài khoản đã bị vô hiệu hóa, vui lòng liên hệ hỗ trợ." });
+    }
     if (!user) {
       return res.status(400).json({ message: "Email không tồn tại" });
     }
@@ -38,7 +42,7 @@ router.post("/login", async (req: Request, res: Response) => {
     res.json({
       message: "Đăng nhập thành công",
       token,
-      user: { id: user.id, email: user.email, role: user.role },
+      user: { id: user.id, email: user.email, role: user.role, isActive: (user as any).isActive },
     });
   } catch (error) {
     res.status(500).json({ message: "Lỗi server", error });

@@ -7,6 +7,8 @@ export interface RatingAttributes {
   userId: number;
   rating: number;
   comment?: string | null;
+  containsProfanity?: boolean;
+  moderationStatus?: 'PENDING' | 'REVIEWED';
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -23,6 +25,8 @@ implements RatingAttributes {
   userId!: number;
   rating!: number;
   comment?: string | null;
+  containsProfanity?: boolean;
+  moderationStatus?: 'PENDING' | 'REVIEWED';
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -33,6 +37,8 @@ Rating.init({
   userId: { type: DataTypes.INTEGER, allowNull: false },
   rating: { type: DataTypes.DECIMAL(2,1), allowNull: false },
   comment: { type: DataTypes.TEXT },
+  containsProfanity: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
+  moderationStatus: { type: DataTypes.ENUM('PENDING','REVIEWED'), allowNull: false, defaultValue: 'REVIEWED' },
   createdAt: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
   updatedAt: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
 }, {

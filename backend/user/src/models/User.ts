@@ -15,6 +15,7 @@ export interface UserAttributes {
   otp?: string | null;
   otpExpire?: Date | null;
   role: "user" | "admin";
+  isActive?: boolean; 
   loyaltyPoints?: number;
   createdAt?: Date;
   updatedAt?: Date;
@@ -22,7 +23,7 @@ export interface UserAttributes {
 
 // 2. Khai báo attributes khi tạo (id, createdAt, updatedAt sẽ tự sinh)
 export interface UserCreationAttributes
-  extends Optional<UserAttributes, "id" | "createdAt" | "updatedAt"| "gender" | "birthday" | "avatar_url"> {}
+  extends Optional<UserAttributes, "id" | "createdAt" | "updatedAt"| "gender" | "birthday" | "avatar_url" | "isActive"> {}
 
 // 3. Tạo class User kế thừa Sequelize Model
 export class User
@@ -41,6 +42,7 @@ export class User
   public otp!: string | null;
   public otpExpire!: Date | null;
   public role!: "user" | "admin";
+  public isActive!: boolean;
   public loyaltyPoints!: number;
 
   // timestamps!
@@ -101,6 +103,11 @@ User.init(
       type: DataTypes.ENUM("user", "admin"),
       allowNull: false,
       defaultValue: "user",
+    },
+    isActive: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
     },
     loyaltyPoints: {
       type: DataTypes.INTEGER.UNSIGNED,

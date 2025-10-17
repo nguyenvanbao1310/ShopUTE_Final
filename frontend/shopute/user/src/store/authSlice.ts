@@ -294,7 +294,8 @@ const authSlice = createSlice({
       })
       .addCase(fetchProfile.fulfilled, (state, action) => {
         state.loading = false;
-        state.user = action.payload;
+        // Merge to preserve fields like id/role from login response
+        state.user = { ...(state.user || {}), ...(action.payload as any) };
         state.isAuthenticated = true;
       })
       .addCase(fetchProfile.rejected, (state, action) => {

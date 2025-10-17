@@ -8,6 +8,7 @@ export interface CouponAttributes {
   type: "PERCENT" | "AMOUNT";
   value: string; // store DECIMAL as string
   minOrderAmount?: string | null;
+  maxDiscountValue?: string | null;
   expiresAt?: Date | null;
   isUsed: boolean;
   usedAt?: Date | null;
@@ -20,6 +21,7 @@ type CouponCreation = Optional<
   | "id"
   | "userId"
   | "minOrderAmount"
+  | "maxDiscountValue"
   | "expiresAt"
   | "isUsed"
   | "usedAt"
@@ -34,6 +36,7 @@ class Coupon extends Model<CouponAttributes, CouponCreation> implements CouponAt
   public type!: "PERCENT" | "AMOUNT";
   public value!: string;
   public minOrderAmount!: string | null;
+  public maxDiscountValue!: string | null;
   public expiresAt!: Date | null;
   public isUsed!: boolean;
   public usedAt!: Date | null;
@@ -49,6 +52,7 @@ Coupon.init(
     type: { type: DataTypes.ENUM("PERCENT", "AMOUNT"), allowNull: false, defaultValue: "PERCENT" },
     value: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
     minOrderAmount: { type: DataTypes.DECIMAL(14, 2), allowNull: true },
+    maxDiscountValue: { type: DataTypes.DECIMAL(14, 2), allowNull: true },
     expiresAt: { type: DataTypes.DATE, allowNull: true },
     isUsed: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
     usedAt: { type: DataTypes.DATE, allowNull: true },
