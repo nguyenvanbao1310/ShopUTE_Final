@@ -124,7 +124,7 @@ export async function createProductRatingSvc(
   // reward
   let reward: any = null;
   if (rewardType === "points") {
-    const POINTS_PER_REVIEW = 50;
+    const POINTS_PER_REVIEW = 10;
     const user = await User.findByPk(userId);
     if (user) {
       user.loyaltyPoints = (user.loyaltyPoints || 0) + POINTS_PER_REVIEW;
@@ -134,16 +134,18 @@ export async function createProductRatingSvc(
   } else if (rewardType === "coupon") {
     const code = generateCouponCode();
     const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+    const MAX_DISCOUNT_CAP = 50000; // VND cap for discount from coupon
     const coupon = await Coupon.create({
       code,
       userId,
       type: "PERCENT",
       value: 5, // 5% off
       minOrderAmount: null,
+      maxDiscountValue: MAX_DISCOUNT_CAP,
       expiresAt,
       isUsed: false,
     });
-    reward = { type: "coupon", code: coupon.code, percent: 5, expiresAt };
+    reward = { type: "coupon", code: coupon.code, percent: 5, maxDiscountValue: MAX_DISCOUNT_CAP, expiresAt };
   }
 
   return { id: created.id, reward };

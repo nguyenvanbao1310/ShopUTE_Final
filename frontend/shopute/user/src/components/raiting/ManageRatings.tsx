@@ -1,4 +1,5 @@
 import { FC } from "react";
+import ReplyRaiting from "./ReplyRaiting";
 import { Star, MoreVertical } from "lucide-react";
 
 export interface RatingItem {
@@ -91,6 +92,10 @@ const ManageRatings: FC<ManageRatingsProps> = ({
             </div>
           </div>
           {r.comment && <p className="mt-2 text-gray-700">{r.comment}</p>}
+          {/* Reply block at bottom-right area */}
+          <div className="mt-2">
+            <ReplyRaiting ratingId={r.id} />
+          </div>
           <div className="text-xs text-gray-400 mt-1">
             {new Date(r.createdAt).toLocaleString()}
           </div>
