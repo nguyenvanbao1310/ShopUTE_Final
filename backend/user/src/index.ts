@@ -16,13 +16,17 @@ import wishlistRoutes from "./routes/wishlistRoutes";
 import viewedRoutes from "./routes/viewedRoutes";
 import voucherRoutes from "./routes/voucherRoutes";
 import shippingMethodRoutes from "./routes/shippingMethodRoutes";
+import notificationRoutes from "./routes/notificationRoutes"
 import { associateModels } from "./models";
 import { startCronJobs } from "./cronJobs";
+import http from "http";
+import { initWebSocket } from "../src/config/websocket";
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 8088;
-
+const server = http.createServer(app);
+initWebSocket(server);
 app.use("/images", express.static(path.join(process.cwd(), "public/images")));
 
 associateModels();
@@ -51,6 +55,7 @@ app.use("/api/wishlist", wishlistRoutes);
 app.use("/api/viewed", viewedRoutes);
 app.use("/api/vouchers", voucherRoutes);
 app.use("/api/shipping-methods", shippingMethodRoutes);
+app.use("/api/nofi", notificationRoutes);
 // Kết nối DB
 connectDB();
 
@@ -60,7 +65,7 @@ app.get("/", (req, res) => {
 });
 
 // Start server
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
   startCronJobs();
 });

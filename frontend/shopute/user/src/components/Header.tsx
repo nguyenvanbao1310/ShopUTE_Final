@@ -5,6 +5,7 @@ import { logout } from "../store/authSlice";
 import UserMenu from "./miniMenu";
 import { Search } from "lucide-react";
 import { useEffect } from "react";
+import NotificationBell from "./NotificationBell";
 import { fetchCart, mergeGuestCart } from "../store/cartSlice";
 
 const Header = () => {
@@ -70,6 +71,7 @@ const Header = () => {
                 </span>
               )}
             </Link>
+            {isAuthenticated && <NotificationBell key={user?.id ?? "guest"} />}
             {isAuthenticated ? (
               <UserMenu  user={{ ...user, name: `${user?.firstName || ""} ${user?.lastName || ""}` }} handleLogout={handleLogout} />
             ) : (
