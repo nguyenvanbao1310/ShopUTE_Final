@@ -3,9 +3,6 @@ import axios from "axios";
 import { useParams, Link } from "react-router-dom";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Pagination } from "swiper/modules";
-import "swiper/css";
-import "swiper/css/navigation";
-import "swiper/css/pagination";
 import {
   Star,
   Heart,
@@ -16,14 +13,16 @@ import {
   Twitter,
   Facebook,
   Instagram,
+  MoreVertical,
 } from "lucide-react";
 import SimilarProducts from "./SimilarProducts";
 import MainLayout from "../../layouts/MainLayout";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch } from "../../store/store";
 import { addToCart } from "../../store/cartSlice";
-import { createProductRating, fetchProductRatings } from "../../apis/rating";
+import { createProductRating, fetchProductRatings, updateRating } from "../../apis/rating";
 import { viewedApi } from "../../apis/viewedApi";
+import RatingSection from "./RatingSection";
 
 interface Product {
   id: number;
@@ -71,10 +70,13 @@ const ProductDetail: FC = () => {
   const [myComment, setMyComment] = useState<string>("");
   const [rewardType, setRewardType] = useState<"points" | "coupon">("points");
   const [submitMsg, setSubmitMsg] = useState<string>("");
+  const [menuOpenId, setMenuOpenId] = useState<number | null>(null);
+  const [editing, setEditing] = useState<{ id: number; rating: number; comment: string } | null>(null);
 
   const { id } = useParams<{ id: string }>();
   const dispatch = useDispatch<AppDispatch>();
   const isAuthenticated = useSelector((s: any) => s?.auth?.isAuthenticated);
+  const currentUserId = useSelector((s: any) => s?.auth?.user?.id);
   const viewedAdded = useRef(false);
 
   useEffect(() => {
@@ -109,6 +111,12 @@ const ProductDetail: FC = () => {
     );
   };
 
+  const refreshRatings = async () => {
+    if (!id) return;
+    const data = await fetchProductRatings(Number(id));
+    setRatings(data || []);
+  };
+
   const submitReview = async () => {
     setSubmitMsg("");
     try {
@@ -118,8 +126,7 @@ const ProductDetail: FC = () => {
         comment: myComment,
         rewardType,
       });
-      const data = await fetchProductRatings(Number(id));
-      setRatings(data || []);
+      await refreshRatings();
       if ((res as any)?.reward?.type === "coupon") {
         setSubmitMsg(
           `Cảm ơn bạn! Tặng mã giảm giá ${(res as any).reward.code} (-${
@@ -141,6 +148,24 @@ const ProductDetail: FC = () => {
       setSubmitMsg(msg);
     }
   };
+
+  const onClickEdit = (r: Rating) => {
+    setMenuOpenId(null);
+    setEditing({ id: r.id, rating: r.rating, comment: r.comment || "" });
+  };
+
+  const onSaveEdit = async () => {
+    if (!editing) return;
+    try {
+      await updateRating(editing.id, { rating: editing.rating, comment: editing.comment });
+      setEditing(null);
+      await refreshRatings();
+    } catch (e) {
+      // no-op
+    }
+  };
+
+  // Revoking ratings is no longer supported
 
   if (loading) return <p className="text-center py-6">Đang tải...</p>;
   if (!product)
@@ -487,149 +512,15 @@ const ProductDetail: FC = () => {
               </div>
             </div>
           </div>
-
-          <div className="py-6">
-            <div className="mb-6">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold">
-                  Reviews total: {ratings.length}
-                </h2>
-                <div className="flex items-center">
-                  <span className="mr-2 font-semibold">
-                    Overall rating {averageRating.toFixed(1)}
-                  </span>
-                  <div className="flex">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Star
-                        key={i}
-                        size={18}
-                        className={
-                          i < Math.round(averageRating)
-                            ? "text-yellow-400 fill-current"
-                            : "text-gray-300"
-                        }
-                      />
-                    ))}
-                  </div>
-                  <span className="ml-2 text-gray-600">
-                    ({ratings.length} Reviews)
-                  </span>
-                </div>
-              </div>
-
-              {isAuthenticated && (
-                <div className="border rounded-lg p-4 bg-white mb-6">
-                  <h3 className="font-semibold mb-2">Đánh giá sản phẩm</h3>
-                  <div className="flex items-center mb-3">
-                    {[1, 2, 3, 4, 5].map((n) => (
-                      <button
-                        key={n}
-                        onClick={() => setMyRating(n)}
-                        className="mr-1"
-                      >
-                        <Star
-                          size={20}
-                          className={
-                            n <= myRating
-                              ? "text-yellow-400 fill-current"
-                              : "text-gray-300"
-                          }
-                        />
-                      </button>
-                    ))}
-                    <span className="ml-2 text-sm text-gray-600">
-                      {myRating || 0}/5
-                    </span>
-                  </div>
-                  <textarea
-                    value={myComment}
-                    onChange={(e) => setMyComment(e.target.value)}
-                    placeholder="Chia sẻ cảm nhận của bạn..."
-                    className="w-full border rounded p-2 mb-3"
-                    rows={3}
-                  />
-                  <div className="flex items-center mb-3">
-                    <label className="mr-3 text-sm">Nhận thưởng:</label>
-                    <label className="mr-4 text-sm">
-                      <input
-                        type="radio"
-                        name="rewardType"
-                        value="points"
-                        checked={rewardType === "points"}
-                        onChange={() => setRewardType("points")}
-                      />{" "}
-                      Điểm
-                    </label>
-                    <label className="text-sm">
-                      <input
-                        type="radio"
-                        name="rewardType"
-                        value="coupon"
-                        checked={rewardType === "coupon"}
-                        onChange={() => setRewardType("coupon")}
-                      />{" "}
-                      Mã giảm giá
-                    </label>
-                  </div>
-                  <button
-                    onClick={submitReview}
-                    disabled={myRating < 1}
-                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-300"
-                  >
-                    Gửi đánh giá
-                  </button>
-                  {submitMsg && (
-                    <p className="mt-2 text-sm text-green-600">{submitMsg}</p>
-                  )}
-                </div>
-              )}
-
-              <div className="space-y-4">
-                {ratingsLoading ? (
-                  <p>Đang tải đánh giá...</p>
-                ) : ratings.length > 0 ? (
-                  ratings.map((r) => (
-                    <div key={r.id} className="border p-4 rounded bg-white">
-                      <div className="flex items-center justify-between">
-                        <div className="font-semibold">
-                          {r.user?.name || "User"}
-                        </div>
-                        <div className="flex items-center">
-                          {Array.from({ length: 5 }).map((_, i) => (
-                            <Star
-                              key={i}
-                              size={16}
-                              className={
-                                i < Math.round(r.rating)
-                                  ? "text-yellow-400 fill-current"
-                                  : "text-gray-300"
-                              }
-                            />
-                          ))}
-                        </div>
-                      </div>
-                      {r.comment && (
-                        <p className="mt-2 text-gray-700">{r.comment}</p>
-                      )}
-                      <div className="text-xs text-gray-400 mt-1">
-                        {new Date(r.createdAt).toLocaleString()}
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-gray-600">Chưa có đánh giá nào.</p>
-                )}
-              </div>
+          {/* New Rating Section Component (extracted) */}
+            <div className="mt-6">
+              <RatingSection productId={product.id} />
             </div>
-
-            {/* Similar Products */}
+          {/* Similar Products */}
             <SimilarProducts
               productId={product.id}
               categoryId={product.categoryId}
             />
-          </div>
-
-          {/* <FeaturedProducts /> */}
         </div>
       </div>
     </MainLayout>

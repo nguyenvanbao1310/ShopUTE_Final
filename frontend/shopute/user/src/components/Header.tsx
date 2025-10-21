@@ -39,7 +39,7 @@ const Header = () => {
         {/* Logo */}
         <Link to="/" className="flex-shrink-0 mr-6">
           <img
-            src="img/background_uteshop.png"
+            src="/img/background_uteshop.png"
             alt="UTEShop"
             style={{ height: "60px", width: "auto" }}
             className="rounded-md bg-white"

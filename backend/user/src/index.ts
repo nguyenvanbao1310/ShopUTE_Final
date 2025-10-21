@@ -17,6 +17,7 @@ import viewedRoutes from "./routes/viewedRoutes";
 import voucherRoutes from "./routes/voucherRoutes";
 import shippingMethodRoutes from "./routes/shippingMethodRoutes";
 import notificationRoutes from "./routes/notificationRoutes"
+import ratingRoutes from "./routes/ratingRoutes";
 import { associateModels } from "./models";
 import { startCronJobs } from "./cronJobs";
 import http from "http";
@@ -56,6 +57,7 @@ app.use("/api/viewed", viewedRoutes);
 app.use("/api/vouchers", voucherRoutes);
 app.use("/api/shipping-methods", shippingMethodRoutes);
 app.use("/api/nofi", notificationRoutes);
+app.use("/api/ratings", ratingRoutes);
 // Kết nối DB
 connectDB();
 

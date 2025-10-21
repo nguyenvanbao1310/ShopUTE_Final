@@ -3,6 +3,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { ProductsModule } from './modules/products/product.module';
 import { OrdersModule } from './modules/orders/orders.module';
+import { CouponsModule } from './modules/coupons/coupons.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
+import { CommentsModule } from './modules/comments/comments.module';
+import { RepliesModule } from './modules/rating-replies/replies.module';
+import { UsersModule } from './modules/users/users.module';
 
 @Module({
   imports: [
@@ -19,6 +24,11 @@ import { OrdersModule } from './modules/orders/orders.module';
     }),
     ProductsModule,
     OrdersModule,
+    CouponsModule,
+    NotificationsModule,
+    CommentsModule,
+    RepliesModule,
+    UsersModule,
   ],
 })
 export class AppModule {}
