@@ -1,12 +1,28 @@
 // admin.guard.ts
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException, ForbiddenException } from '@nestjs/common';
-import jwt, { JwtPayload } from 'jsonwebtoken';
+import { verify } from 'jsonwebtoken';
 import type { Request } from 'express';
 
 @Injectable()
 export class AdminGuard implements CanActivate {
   canActivate(ctx: ExecutionContext): boolean {
-    const req = ctx.switchToHttp().getRequest<Request & { user?: (JwtPayload & { role?: string; sub?: number }) }>();
+    type AdminJwtPayload = {
+      role?: string;
+      sub?: number;
+      iat?: number;
+      exp?: number;
+      [key: string]: unknown;
+    };
+
+    const isAdminJwtPayload = (value: unknown): value is AdminJwtPayload => {
+      if (typeof value !== 'object' || value === null) return false;
+      const obj = value as Record<string, unknown>;
+      if ('role' in obj && typeof obj.role !== 'string') return false;
+      if ('sub' in obj && typeof obj.sub !== 'number') return false;
+      return true;
+    };
+
+    const req = ctx.switchToHttp().getRequest<Request & { user?: AdminJwtPayload }>();
 
     // Allow dev header as fallback
     const devRole = (req.headers['x-role'] as string | undefined)?.toUpperCase();
@@ -18,18 +34,21 @@ export class AdminGuard implements CanActivate {
     }
     const token = auth.slice('Bearer '.length).trim();
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
-      if (typeof decoded !== 'object' || decoded === null) {
+      const secret = process.env.JWT_SECRET;
+      if (!secret) {
+        throw new UnauthorizedException('Missing JWT secret');
+      }
+      const decoded: unknown = verify(token, secret);
+      if (!isAdminJwtPayload(decoded)) {
         throw new UnauthorizedException('Invalid token payload');
       }
-      const payload = decoded as JwtPayload & { role?: string };
-      const role = (payload.role || '').toUpperCase();
+      const role = (decoded.role || '').toUpperCase();
       if (role !== 'ADMIN') {
         throw new ForbiddenException('Admin role required');
       }
-      req.user = payload;
+      req.user = decoded;
       return true;
-    } catch (e) {
+    } catch {
       throw new UnauthorizedException('Invalid or expired token');
     }
   }
