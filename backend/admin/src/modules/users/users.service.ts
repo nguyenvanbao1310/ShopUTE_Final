@@ -132,7 +132,7 @@ export class UsersService {
       selectBase,
       where.length ? `WHERE ${where.join(' AND ')}` : '',
       'ORDER BY createdAt DESC',
-    ]
+    ] 
       .filter(Boolean)
       .join(' ');
 
