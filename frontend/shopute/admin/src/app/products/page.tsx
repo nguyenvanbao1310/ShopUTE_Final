@@ -1,98 +1,138 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { productApi, Product } from "@/lib/productApi";
 import { AdminButton } from "@/components/ui/AdminButton";
 import { Card, CardContent } from "@/components/ui/Card";
-import { Eye, Pencil, Trash2, Star, Plus, ChevronDown } from "lucide-react";
+import { Eye, Pencil, Trash2, ChevronDown } from "lucide-react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
-
-type Product = {
-  id: string;
-  name: string;
-  sku: string;
-  category: string;
-  price: number;
-  stock: number;
-  totalStock: number;
-  status: "In Stock" | "Low Stock" | "Out of Stock";
-  rating: number;
-  publishedAt: string;
-};
+import AddProductModal from "../../components/modals/AddProductModal";
+import EditProductModal from "../../components/modals/EditProductModal";
+import { uploadImage } from "../../lib/uploadImage";
 
 export default function ProductsPage() {
-  const [products] = useState<Product[]>([
-    {
-      id: "#PRD-2024-001",
-      name: "Smartphone X Pro",
-      sku: "SMX-PRO-256",
-      category: "Electronics",
-      price: 899.99,
-      stock: 78,
-      totalStock: 120,
-      status: "In Stock",
-      rating: 4.8,
-      publishedAt: "28 Apr, 2025 01:05 PM",
-    },
-    {
-      id: "#PRD-2024-002",
-      name: "Wireless Earbuds Pro",
-      sku: "WEB-PRO-202",
-      category: "Audio",
-      price: 129.99,
-      stock: 3,
-      totalStock: 20,
-      status: "Low Stock",
-      rating: 4.5,
-      publishedAt: "27 Apr, 2025 10:30 AM",
-    },
-    {
-      id: "#PRD-2024-003",
-      name: "Smart Watch Series 7",
-      sku: "SWS-7-BLK",
-      category: "Wearables",
-      price: 249.99,
-      stock: 36,
-      totalStock: 50,
-      status: "In Stock",
-      rating: 4.9,
-      publishedAt: "26 Apr, 2025 03:45 PM",
-    },
-  ]);
-
+  const [products, setProducts] = useState<Product[]>([]);
   const [sortBy, setSortBy] = useState("Newest");
+  const [openModal, setOpenModal] = useState(false);
+  const [openEdit, setOpenEdit] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+
+  // 🧩 Load danh sách sản phẩm
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      const data = await productApi.getAll();
+      setProducts(data);
+    } catch (error) {
+      console.error("❌ Failed to fetch products:", error);
+    }
+  };
+
+  // ➕ Thêm sản phẩm mới
+  const handleAddProduct = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries()) as any;
+
+    const file = formData.get("thumbnail") as File | null;
+    let thumbnailUrl = "";
+    if (file && file.size > 0) {
+      try {
+        thumbnailUrl = await uploadImage(file);
+      } catch (error) {
+        console.error("❌ Lỗi upload ảnh:", error);
+        alert("Upload ảnh thất bại!");
+        return;
+      }
+    }
+
+    const imageFiles = formData.getAll("images") as File[];
+    let imageUrls: string[] = [];
+
+    if (imageFiles.length > 0) {
+      try {
+        imageUrls = await Promise.all(
+          imageFiles.map((file) => uploadImage(file))
+        );
+      } catch (error) {
+        console.error("❌ Lỗi upload ảnh phụ:", error);
+        alert("Upload ảnh phụ thất bại!");
+        return;
+      }
+    }
+
+    const newProduct = {
+      name: data.name,
+      description: data.description || "",
+      price: Number(data.price),
+      stock: Number(data.stock),
+      categoryId: Number(data.categoryId),
+      brand: data.brand,
+      cpu: data.cpu,
+      ram: data.ram,
+      storage: data.storage,
+      gpu: data.gpu,
+      screen: data.screen,
+      viewCount: 0,
+      status: (data.status === "ACTIVE" ? "ACTIVE" : "INACTIVE") as
+        | "ACTIVE"
+        | "INACTIVE",
+      thumbnailUrl,
+      imageUrls, // tạm bỏ ảnh
+    };
+
+    try {
+      await productApi.create(newProduct);
+      alert("✅ Thêm sản phẩm thành công!");
+      setOpenModal(false);
+      await fetchProducts();
+    } catch (err) {
+      console.error("❌ Lỗi khi thêm sản phẩm:", err);
+      alert("❌ Lỗi khi thêm sản phẩm, kiểm tra console!");
+    }
+  };
+
+  // ✏️ Mở modal Edit và load sản phẩm theo ID
+  const handleEditClick = async (id: number) => {
+    try {
+      const product = await productApi.getById(id);
+      setSelectedProduct(product);
+      setOpenEdit(true);
+    } catch (err) {
+      console.error("❌ Lỗi khi lấy thông tin sản phẩm:", err);
+      alert("Không thể lấy thông tin sản phẩm.");
+    }
+  };
+
+  // 💾 Lưu chỉnh sửa
+  const handleEditSubmit = async (id: number, data: FormData) => {
+    const updated = {
+      name: data.get("name") as string,
+      description: data.get("description") as string,
+      price: Number(data.get("price")),
+      stock: Number(data.get("stock")),
+      categoryId: Number(data.get("categoryId")),
+      brand: data.get("brand") as string,
+      cpu: data.get("cpu") as string,
+      ram: data.get("ram") as string,
+      storage: data.get("storage") as string,
+      gpu: data.get("gpu") as string,
+      screen: data.get("screen") as string,
+      status: data.get("status") as "ACTIVE" | "INACTIVE",
+    };
+    await productApi.update(id, updated);
+    alert("✅ Cập nhật thành công!");
+    setOpenEdit(false);
+    await fetchProducts();
+  };
 
   return (
     <AdminLayout>
       <div className="space-y-6">
-        {/* --- Summary Cards --- */}
-        <div className="grid grid-cols-4 gap-4">
-          <SummaryCard
-            title="Total Products"
-            value="8,450"
-            sub="+10.5% vs Last Month"
-            color="bg-indigo-100 text-indigo-600"
-          />
-          <SummaryCard
-            title="Available Stock"
-            value="5,320"
-            sub="+8.2% Stock Growth"
-            color="bg-green-100 text-green-600"
-          />
-          <SummaryCard
-            title="Total Sales"
-            value="12,980"
-            sub="+15.3% Monthly Sales"
-            color="bg-orange-100 text-orange-600"
-          />
-          <SummaryCard
-            title="Out of Stock"
-            value="120"
-            sub="-2.5% vs Last Month"
-            color="bg-red-100 text-red-600"
-          />
-        </div>
-
-        {/* --- Product Table --- */}
         <Card>
           <CardContent className="p-6">
             <div className="flex justify-between items-center mb-6">
@@ -104,7 +144,6 @@ export default function ProductsPage() {
               </div>
 
               <div className="flex gap-3 items-center">
-                {/* Sort By */}
                 <div className="relative">
                   <select
                     value={sortBy}
@@ -115,28 +154,34 @@ export default function ProductsPage() {
                     <option>Oldest</option>
                     <option>Price: High to Low</option>
                     <option>Price: Low to High</option>
-                    <option>Top Rated</option>
+                    <option>Top Viewed</option>
                   </select>
                   <ChevronDown className="absolute right-2 top-2.5 w-4 h-4 text-gray-500 pointer-events-none" />
                 </div>
 
-                {/* Add Product */}
-                <AdminButton variant="primary">Add Product</AdminButton>
+                <AdminButton
+                  variant="primary"
+                  onClick={() => setOpenModal(true)}
+                >
+                  Add Product
+                </AdminButton>
                 <AdminButton variant="secondary">Export as CSV</AdminButton>
               </div>
             </div>
 
+            {/* 🧾 Danh sách sản phẩm */}
             <table className="w-full border-collapse">
               <thead>
                 <tr className="border-b text-left text-gray-600">
                   <th className="p-2">ID</th>
                   <th className="p-2">Product</th>
-                  <th className="p-2">Category</th>
+                  <th className="p-2">Image</th>
+                  <th className="p-2">Brand</th>
                   <th className="p-2">Price</th>
                   <th className="p-2">Stock</th>
+                  <th className="p-2">Views</th>
                   <th className="p-2">Status</th>
-                  <th className="p-2">Rating</th>
-                  <th className="p-2">Published</th>
+                  <th className="p-2">Created At</th>
                   <th className="p-2 text-center">Actions</th>
                 </tr>
               </thead>
@@ -144,36 +189,65 @@ export default function ProductsPage() {
                 {products.map((p) => (
                   <tr key={p.id} className="border-b hover:bg-gray-50">
                     <td className="p-2">{p.id}</td>
+                    <td className="p-2">{p.name}</td>
                     <td className="p-2">
-                      <div className="font-medium">{p.name}</div>
-                      <div className="text-sm text-gray-500">SKU: {p.sku}</div>
+                      {p.thumbnailUrl ? (
+                        <img
+                          src={p.thumbnailUrl}
+                          alt={p.name}
+                          className="w-16 h-16 object-cover rounded-md border"
+                        />
+                      ) : (
+                        <div className="w-16 h-16 bg-gray-200 flex items-center justify-center rounded-md text-gray-400 text-xs">
+                          No image
+                        </div>
+                      )}
                     </td>
-                    <td className="p-2">{p.category}</td>
-                    <td className="p-2">${p.price.toFixed(2)}</td>
+                    <td className="p-2">{p.brand}</td>
                     <td className="p-2">
-                      {p.stock}/{p.totalStock}
+                      {Number(p.price).toLocaleString("vi-VN")} VNĐ
                     </td>
+                    <td className="p-2">{p.stock}</td>
+                    <td className="p-2">{p.viewCount}</td>
                     <td className="p-2">
                       <span
                         className={`px-2 py-1 rounded text-sm ${
-                          p.status === "In Stock"
+                          p.status === "ACTIVE"
                             ? "bg-green-100 text-green-600"
-                            : p.status === "Low Stock"
-                            ? "bg-orange-100 text-orange-600"
-                            : "bg-red-100 text-red-600"
+                            : "bg-gray-200 text-gray-600"
                         }`}
                       >
                         {p.status}
                       </span>
                     </td>
-                    <td className="p-2 flex items-center gap-1">
-                      <Star className="text-yellow-500 w-4 h-4" /> {p.rating}
+                    <td className="p-2 text-gray-600">
+                      {new Date(p.createdAt).toLocaleDateString()}
                     </td>
-                    <td className="p-2 text-gray-600">{p.publishedAt}</td>
-                    <td className="p-2 flex justify-center gap-2">
+                    <td className="py-7 flex justify-center gap-2">
                       <Eye className="text-green-600 cursor-pointer w-5 h-5" />
-                      <Pencil className="text-blue-600 cursor-pointer w-5 h-5" />
-                      <Trash2 className="text-red-600 cursor-pointer w-5 h-5" />
+                      <Pencil
+                        className="text-blue-600 cursor-pointer w-5 h-5"
+                        onClick={() => handleEditClick(p.id)}
+                      />
+                      <Trash2
+                        className="text-red-600 cursor-pointer w-5 h-5"
+                        onClick={async () => {
+                          if (
+                            confirm(
+                              `Bạn có chắc muốn xóa sản phẩm "${p.name}"?`
+                            )
+                          ) {
+                            try {
+                              await productApi.remove(p.id);
+                              alert("🗑 Xóa sản phẩm thành công!");
+                              setProducts(await productApi.getAll());
+                            } catch (err) {
+                              console.error(err);
+                              alert("❌ Lỗi khi xóa sản phẩm!");
+                            }
+                          }
+                        }}
+                      />
                     </td>
                   </tr>
                 ))}
@@ -181,32 +255,24 @@ export default function ProductsPage() {
             </table>
           </CardContent>
         </Card>
+
+        {/* ➕ Modal thêm sản phẩm */}
+        <AddProductModal
+          open={openModal}
+          onClose={() => setOpenModal(false)}
+          onSubmit={handleAddProduct}
+        />
+
+        {/* ✏️ Modal chỉnh sửa sản phẩm */}
+        {selectedProduct && (
+          <EditProductModal
+            open={openEdit}
+            onClose={() => setOpenEdit(false)}
+            onSubmit={handleEditSubmit}
+            product={selectedProduct}
+          />
+        )}
       </div>
     </AdminLayout>
-  );
-}
-
-function SummaryCard({
-  title,
-  value,
-  sub,
-  color,
-}: {
-  title: string;
-  value: string;
-  sub: string;
-  color: string;
-}) {
-  return (
-    <Card>
-      <CardContent className="p-4">
-        <div
-          className={`w-10 h-10 flex items-center justify-center rounded-xl ${color} mb-3`}
-        ></div>
-        <h4 className="text-gray-500 text-sm">{title}</h4>
-        <div className="text-2xl font-bold">{value}</div>
-        <div className="text-sm text-gray-500">{sub}</div>
-      </CardContent>
-    </Card>
   );
 }
