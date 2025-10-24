@@ -1,41 +1,62 @@
 import {
-  Column,
-  CreateDateColumn,
   Entity,
   PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
   UpdateDateColumn,
-  Index,
 } from 'typeorm';
 
 @Entity('users')
 export class User {
-  @PrimaryGeneratedColumn()
-  id!: number;
+  @PrimaryGeneratedColumn({ unsigned: true })
+  id: number;
 
-  @Index({ unique: true })
   @Column({ type: 'varchar', length: 255, unique: true })
-  email!: string;
+  email: string;
+
+  @Column({ type: 'varchar', length: 255 })
+  password: string;
 
   @Column({ type: 'varchar', length: 100 })
-  firstName!: string;
+  firstName: string;
 
   @Column({ type: 'varchar', length: 100 })
-  lastName!: string;
+  lastName: string;
 
-  @Column({ type: 'varchar', length: 30 })
-  phone!: string;
-
-  // Accepts 'admin' | 'user' as stored in DB
   @Column({ type: 'varchar', length: 20 })
-  role!: string;
+  phone: string;
+
+  @Column({ type: 'boolean', nullable: true })
+  gender?: boolean | null;
+
+  @Column({ type: 'date', nullable: true })
+  birthday?: Date | null;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  avatar_url?: string | null;
+
+  @Column({ type: 'varchar', length: 10, nullable: true })
+  otp?: string | null;
+
+  @Column({ type: 'datetime', nullable: true })
+  otpExpire?: Date | null;
+
+  @Column({
+    type: 'enum',
+    enum: ['user', 'admin'],
+    default: 'user',
+  })
+  role: 'user' | 'admin';
 
   @Column({ type: 'boolean', default: true })
-  isActive!: boolean;
+  isActive: boolean;
+
+  @Column({ type: 'int', unsigned: true, default: 0 })
+  loyaltyPoints: number;
 
   @CreateDateColumn()
-  createdAt!: Date;
+  createdAt: Date;
 
   @UpdateDateColumn()
-  updatedAt!: Date;
+  updatedAt: Date;
 }
-

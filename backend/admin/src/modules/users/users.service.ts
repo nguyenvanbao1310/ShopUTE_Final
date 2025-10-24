@@ -9,7 +9,7 @@ export class UsersService {
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
   ) {}
-
+  
   async listAll(): Promise<User[]> {
     return this.userRepo.find({ order: { createdAt: 'DESC' } });
   }
@@ -45,5 +45,30 @@ export class UsersService {
     }
 
     return qb.getMany();
+  }
+
+  async stats(): Promise<{ total: number; active: number; banned: number }> {
+    const [total, active, banned] = await Promise.all([
+      this.userRepo.count(),
+      this.userRepo.count({ where: { isActive: true } }),
+      this.userRepo.count({ where: { isActive: false } }),
+    ]);
+    return { total, active, banned };
+  }
+
+  async findByEmail(email: string) {
+    return this.userRepo.findOne({ where: { email } });
+  }
+
+  async create(data: Partial<User>) {
+    const user = this.userRepo.create(data);
+    return this.userRepo.save(user);
+  }
+
+  async findById(id: number) {
+    return this.userRepo.findOne({ where: { id } });
+  }
+  async save(user: User): Promise<User> {
+    return this.userRepo.save(user);
   }
 }

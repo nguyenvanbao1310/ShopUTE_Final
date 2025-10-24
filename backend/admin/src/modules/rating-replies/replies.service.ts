@@ -2,10 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ReplyRow } from './types/replyRow.type';
-import { RawReplyRow } from './types/rawReplyRow.type';
 import { Reply } from './entities/reply.entity';
 import { Rating } from '../comments/entities/rating.entity';
-import { User } from '../users/entities/user.entity';
 
 @Injectable()
 export class RepliesService {
@@ -22,45 +20,27 @@ export class RepliesService {
   }
 
   async listByRating(ratingId: number): Promise<ReplyRow[]> {
-    const rows = await this.replyRepo
-      .createQueryBuilder('rr')
-      .leftJoin(User, 'u', 'u.id = rr.adminUserId')
-      .where('rr.ratingId = :ratingId', { ratingId })
-      .select([
-        'rr.id AS id',
-        'rr.ratingId AS ratingId',
-        'rr.adminUserId AS adminUserId',
-        'rr.message AS message',
-        'rr.createdAt AS createdAt',
-        "COALESCE(CONCAT(TRIM(COALESCE(u.firstName, '')), ' ', TRIM(COALESCE(u.lastName, ''))), CONCAT('Admin#', rr.adminUserId)) AS adminName",
-      ])
-      .orderBy('rr.createdAt', 'DESC')
-      .getRawMany<RawReplyRow>();
+    const replies = await this.replyRepo.find({
+      where: { ratingId },
+      relations: { adminUser: true },
+      order: { createdAt: 'DESC' },
+    });
 
-    return rows.map(this.mapRawToRow);
+    return replies.map(this.mapEntityToRow);
   }
 
   async create(ratingId: number, adminUserId: number | null, message: string): Promise<ReplyRow> {
     await this.ensureRatingExists(ratingId);
 
-    const saved = await this.replyRepo.save({ ratingId, adminUserId, message });
+    const toSave = this.replyRepo.create({ ratingId, adminUserId, message });
+    const saved = await this.replyRepo.save(toSave);
+    const withUser = await this.replyRepo.findOne({
+      where: { id: saved.id },
+      relations: { adminUser: true },
+    });
 
-    const row = await this.replyRepo
-      .createQueryBuilder('rr')
-      .leftJoin(User, 'u', 'u.id = rr.adminUserId')
-      .where('rr.id = :id', { id: saved.id })
-      .select([
-        'rr.id AS id',
-        'rr.ratingId AS ratingId',
-        'rr.adminUserId AS adminUserId',
-        'rr.message AS message',
-        'rr.createdAt AS createdAt',
-        "COALESCE(CONCAT(TRIM(COALESCE(u.firstName, '')), ' ', TRIM(COALESCE(u.lastName, ''))), CONCAT('Admin#', rr.adminUserId)) AS adminName",
-      ])
-      .getRawOne<RawReplyRow>();
-
-    if (!row) throw new NotFoundException('Failed to create reply');
-    return this.mapRawToRow(row);
+    if (!withUser) throw new NotFoundException('Failed to create reply');
+    return this.mapEntityToRow(withUser);
   }
 
   async remove(id: number): Promise<void> {
@@ -68,12 +48,20 @@ export class RepliesService {
     if (!res.affected) throw new NotFoundException('Reply not found');
   }
 
-  private mapRawToRow = (r: RawReplyRow): ReplyRow => ({
-    id: r.id,
-    ratingId: r.ratingId,
-    adminUserId: r.adminUserId,
-    adminName: r.adminName,
-    message: r.message,
-    createdAt: new Date(r.createdAt),
-  });
+  private mapEntityToRow = (reply: Reply): ReplyRow => {
+    const adminName = reply.adminUser
+      ? `${(reply.adminUser.firstName ?? '').trim()} ${(reply.adminUser.lastName ?? '').trim()}`.trim() || `Admin#${reply.adminUserId}`
+      : reply.adminUserId != null
+      ? `Admin#${reply.adminUserId}`
+      : null;
+
+    return {
+      id: reply.id,
+      ratingId: reply.ratingId,
+      adminUserId: reply.adminUserId,
+      adminName,
+      message: reply.message,
+      createdAt: reply.createdAt instanceof Date ? reply.createdAt : new Date(reply.createdAt),
+    };
+  };
 }
