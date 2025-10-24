@@ -10,6 +10,7 @@ import { OrderStatus, PaymentStatus } from "../types/order";
 import CancelRequest from "../models/CancelRequest";
 import Voucher from "../models/Voucher";
 import ShippingMethod from "../models/ShippingMethod";
+import { createNotification } from "../services/notificationService";
 
 export interface CreateOrderInput {
   userId?: number;
@@ -101,18 +102,31 @@ export async function createOrder(data: CreateOrderInput) {
     }));
 
     await OrderDetail.bulkCreate(details, { transaction: t });
-
-    // if (data.userId && usedPoints > 0) {
-    //   const user = await User.findByPk(data.userId, { transaction: t });
-    //   if (user) {
-    //     if ((user.loyaltyPoints ?? 0) < usedPoints) {
-    //       throw new Error("Không đủ điểm thưởng để sử dụng");
-    //     }
-    //     user.loyaltyPoints = (user.loyaltyPoints ?? 0) - usedPoints;
-    //     await user.save({ transaction: t });
-    //   }
-    // }
     await t.commit();
+    if (data.userId) {
+    const user = await User.findByPk(data.userId);
+      await createNotification({
+      receiverId: data.userId,
+      receiverRole: "user",
+      type: "ORDER",
+      title: "🛍️ Đơn hàng mới tạo",
+      message: `Bạn vừa đặt đơn hàng #${order.code} thành công.`,
+      actionUrl: `/orders/${order.id}`,
+      sendEmail: true,
+    });
+    const admin = await User.findOne({ where: { role: "admin" } });
+    if (admin) {
+      await createNotification({
+        receiverId: admin.id,
+        receiverRole: "admin",
+        type: "ORDER",
+        title: "🧾 Đơn hàng mới",
+        message: `${user?.firstName || "Khách hàng"} vừa đặt đơn hàng #${order.code}.`,
+        actionUrl: `/admin/orders/${order.id}`,
+        sendEmail: true,
+      });
+    }
+}
     return { order, details };
   } catch (error) {
     await t.rollback();
