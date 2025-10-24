@@ -25,10 +25,10 @@ export class AuthService {
       email: user.email,
       role: user.role,
     };
-    return this.jwt.signAsync(payload, {
-      secret: process.env.JWT_SECRET,
+    return await this.jwt.signAsync(payload, {
+      secret: process.env.JWT_SECRET!,
       expiresIn: '15m',
-    });
+    }) as string;
   }
 
   private async signRefresh(user: User) {
@@ -37,10 +37,10 @@ export class AuthService {
       email: user.email,
       role: user.role,
     };
-    return this.jwt.signAsync(payload, {
+    return await this.jwt.signAsync(payload, {
       secret: process.env.JWT_SECRET,
       expiresIn: '7d',
-    });
+    }) as string;
   }
 
    async register(dto: RegisterDto) {
@@ -49,7 +49,7 @@ export class AuthService {
     if (existed) throw new ConflictException('Email đã tồn tại trong hệ thống');
 
     // 2️⃣ Hash mật khẩu
-    const hashed = await bcrypt.hash(dto.password, 10);
+    const hashed = await bcrypt.hash(dto.password, 10) as string;
 
     // 3️⃣ Tạo user mới
     const user = await this.users
@@ -83,7 +83,7 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
-    const user = await this.users.findByEmail(dto.email);
+    const user = await this.users.findByEmail(dto.email) as User;
     if (!user) throw new UnauthorizedException('Sai email hoặc mật khẩu');
 
     const match = await bcrypt.compare(dto.password, user.password);
@@ -104,9 +104,8 @@ export class AuthService {
     try {
       const decoded = await this.jwt.verifyAsync<JwtUserPayload>(refreshToken, {
         secret: process.env.JWT_SECRET,
-      });
-
-      const user = await this.users.findById(decoded.sub);
+      }) as JwtUserPayload;
+      const user = await this.users.findById(decoded.sub) as User;
       if (!user) throw new UnauthorizedException('User không tồn tại');
 
       const newAccess = await this.signAccess(user);

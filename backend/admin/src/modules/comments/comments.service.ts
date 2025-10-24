@@ -1,70 +1,51 @@
 import { Injectable } from '@nestjs/common';
-import { DataSource } from 'typeorm';
-import { InjectDataSource } from '@nestjs/typeorm';
-
-type FlaggedComment = {
-  id: number;
-  productId: number;
-  productName: string;
-  userId: number | null;
-  userName: string;
-  userActive: boolean;
-  rating: number;
-  comment: string | null;
-  containsProfanity: boolean;
-  createdAt: Date;
-  reason: string;
-};
-
-type RawRow = {
-      id: number;
-      productId: number;
-      productName: string | null;
-      userId: number | null;
-      userActive: 0 | 1 | boolean;
-      rating: string | number;
-      comment: string | null;
-      containsProfanity: 0 | 1 | boolean;
-      createdAt: Date | string;
-      userName: string;
-    };
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Rating } from './entities/rating.entity';
+import { Product } from '../products/entities/product.entity';
+import { User } from '../users/entities/user.entity';
+import { FlaggedComment } from './types/flaggedComment.type';
+import { RawRow } from './types/rawRow.type';
 
 @Injectable()
 export class CommentsService {
-  constructor(@InjectDataSource() private readonly dataSource: DataSource) {}
+  constructor(
+    @InjectRepository(Rating)
+    private readonly ratingRepo: Repository<Rating>,
+  ) {}
 
   async findFlagged(limit?: number): Promise<FlaggedComment[]> {
-    const params: any[] = [];
-    let sql = `
-      SELECT 
-        r.id AS id,
-        r.productId AS productId,
-        r.userId AS userId,
-        CAST(r.rating AS DECIMAL(3,1)) AS rating,
-        r.comment AS comment,
-        r.containsProfanity AS containsProfanity,
-        r.createdAt AS createdAt,
-        COALESCE(p.name, CONCAT('Product#', r.productId)) AS productName,
-        COALESCE(CONCAT(TRIM(COALESCE(u.firstName, '')), ' ', TRIM(COALESCE(u.lastName, ''))), CONCAT('User#', r.userId)) AS userName,
-        (u.id IS NOT NULL) AS userActive
-      FROM ratings r
-      LEFT JOIN users u ON u.id = r.userId
-      LEFT JOIN products p ON p.id = r.productId
-      WHERE (r.rating < 3) OR (r.containsProfanity = 1)
-      ORDER BY r.createdAt DESC`;
+    const qb = this.ratingRepo
+      .createQueryBuilder('r')
+      .leftJoin(User, 'u', 'u.id = r.userId')
+      .leftJoin(Product, 'p', 'p.id = r.productId')
+      .where('(r.rating < :min) OR (r.containsProfanity = :prof)', { min: 3, prof: true })
+      .select([
+        'r.id AS id',
+        'r.productId AS productId',
+        'r.userId AS userId',
+        'r.rating AS rating',
+        'r.comment AS comment',
+        'r.containsProfanity AS containsProfanity',
+        'r.createdAt AS createdAt',
+        "COALESCE(p.name, CONCAT('Product#', r.productId)) AS productName",
+        "COALESCE(CONCAT(TRIM(COALESCE(u.firstName, '')), ' ', TRIM(COALESCE(u.lastName, ''))), CONCAT('User#', r.userId)) AS userName",
+        '(u.id IS NOT NULL) AS userActive',
+      ])
+      .orderBy('r.createdAt', 'DESC');
+
     if (typeof limit === 'number' && Number.isFinite(limit) && limit > 0) {
-      sql += ' LIMIT ?';
-      params.push(Math.floor(limit));
+      qb.limit(Math.floor(limit));
     }
 
-    const rows: RawRow[] = await this.dataSource.query(sql, params);
+    const rows = await qb.getRawMany<RawRow>();
 
     return rows.map((r) => {
       const ratingNum = Number(r.rating);
       const prof = typeof r.containsProfanity === 'boolean' ? r.containsProfanity : r.containsProfanity === 1;
       const reasons: string[] = [];
-      if (ratingNum < 3) reasons.push('đánh giá thấp');
-      if (prof) reasons.push('có ngôn từ thô tục');
+      if (ratingNum < 3) reasons.push('Đánh giá thấp');
+      if (prof) reasons.push('Có ngôn từ thô tục');
       return {
         id: r.id,
         productId: r.productId,

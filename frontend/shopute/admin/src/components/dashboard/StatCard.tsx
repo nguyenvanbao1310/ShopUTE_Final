@@ -17,7 +17,7 @@ export const StatCard: React.FC<StatCardProps> = ({ title, value, trend, trendVa
       <div>
         <p className="text-gray-500 text-sm mb-1">{title}</p>
         <h3 className="text-2xl font-bold text-gray-800">{value}</h3>
-        <p className={`text-sm mt-2 ${trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>
+        <p hidden={!trendValue} className={`text-sm mt-2 ${trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>
           {trend === 'up' ? '↑' : '↓'} {trendValue} Tuần này
         </p>
       </div>

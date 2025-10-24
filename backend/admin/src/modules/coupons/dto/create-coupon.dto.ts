@@ -1,4 +1,4 @@
-import { IsBoolean, IsDateString, IsEnum, IsInt, IsNotEmpty, IsNumberString, IsOptional, IsPositive, IsString, Length, Min } from 'class-validator';
+import { IsBoolean, IsDate, IsEnum, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, Length, Min } from 'class-validator';
 
 export class CreateCouponDto {
   @IsString()
@@ -14,28 +14,27 @@ export class CreateCouponDto {
   @IsEnum(['PERCENT', 'AMOUNT'] as const)
   type: 'PERCENT' | 'AMOUNT';
 
-  // Accept numeric string to preserve decimals
   @IsNotEmpty()
-  @IsNumberString()
-  value: string;
+  @IsNumber()
+  value: number;
 
   @IsOptional()
-  @IsNumberString()
-  minOrderAmount?: string | null;
+  @IsNumber()
+  minOrderAmount?: number | null;
 
   @IsOptional()
-  @IsNumberString()
-  maxDiscountValue?: string | null;
+  @IsNumber()
+  maxDiscountValue?: number | null;
 
   @IsOptional()
-  @IsDateString()
-  expiresAt?: string | null;
+  @IsDate()
+  expiresAt?: Date | null;
 
   @IsOptional()
   @IsBoolean()
   isUsed?: boolean;
 
   @IsOptional()
-  @IsDateString()
-  usedAt?: string | null;
+  @IsDate()
+  usedAt?: Date | null;
 }
