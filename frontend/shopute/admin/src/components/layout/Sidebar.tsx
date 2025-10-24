@@ -1,5 +1,6 @@
-'use client';
-import React from 'react';
+"use client";
+import React from "react";
+import { useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Package,
@@ -9,18 +10,16 @@ import {
   Users,
   FileText,
   Settings,
-} from 'lucide-react';
-
+} from "lucide-react";
 interface SidebarProps {
   isOpen: boolean;
   activeMenu: string;
   onMenuClick: (id: string) => void;
 }
-
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, activeMenu, onMenuClick }) => {
   const menuItems: { id: string; label: string; icon: React.ElementType; href?: string }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard , href: '/admin'},
-    { id: 'products', label: 'Quản lý sản phẩm', icon: Package },
+    { id: 'products', label: 'Quản lý sản phẩm', icon: Package, href: "/products" },
     { id: 'orders', label: 'Quản lý đơn hàng', icon: ShoppingCart },
     { id: 'categories', label: 'Quản lý danh mục', icon: FolderTree },
     { id: 'promotions', label: 'Quản lý khuyến mãi', icon: Gift },

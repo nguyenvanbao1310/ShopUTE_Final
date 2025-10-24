@@ -1,4 +1,10 @@
-import { IsString, IsNumber, IsOptional, IsEnum } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsEnum,
+  IsOptional,
+  IsArray,
+} from 'class-validator';
 
 export class CreateProductDto {
   @IsString()
@@ -43,4 +49,9 @@ export class CreateProductDto {
 
   @IsString()
   screen: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  imageUrls?: string[];
 }
