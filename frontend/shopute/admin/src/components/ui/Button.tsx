@@ -11,7 +11,7 @@ export function Button({ loading, children, ...props }: ButtonProps) {
       {...props}
       disabled={loading || props.disabled}
       className={`w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition duration-200 
-        ${loading ? 'bg-blue-400 cursor-not-allowed' : ''}`}
+        ${loading ? "bg-blue-400 cursor-not-allowed" : ""}`}
     >
       {loading ? (
         <div className="flex items-center justify-center gap-2">

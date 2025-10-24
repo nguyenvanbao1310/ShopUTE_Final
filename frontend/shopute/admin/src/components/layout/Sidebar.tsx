@@ -1,5 +1,11 @@
+<<<<<<< HEAD
 'use client';
 import React from 'react';
+=======
+"use client";
+import React from "react";
+import { useRouter } from "next/navigation";
+>>>>>>> Bao
 import {
   LayoutDashboard,
   Package,
@@ -9,7 +15,11 @@ import {
   Users,
   FileText,
   Settings,
+<<<<<<< HEAD
 } from 'lucide-react';
+=======
+} from "lucide-react";
+>>>>>>> Bao
 
 interface SidebarProps {
   isOpen: boolean;
@@ -17,6 +27,7 @@ interface SidebarProps {
   onMenuClick: (id: string) => void;
 }
 
+<<<<<<< HEAD
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, activeMenu, onMenuClick }) => {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -31,11 +42,48 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, activeMenu, onMenuClic
 
   return (
     <aside className={`${isOpen ? 'w-64' : 'w-20'} bg-white border-r border-gray-200 transition-all duration-300`}>
+=======
+export const Sidebar: React.FC<SidebarProps> = ({
+  isOpen,
+  activeMenu,
+  onMenuClick,
+}) => {
+  const router = useRouter();
+
+  const menuItems = [
+    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+    {
+      id: "products",
+      label: "Quản lý sản phẩm",
+      icon: Package,
+      path: "/products",
+    },
+    { id: "orders", label: "Quản lý đơn hàng", icon: ShoppingCart },
+    { id: "categories", label: "Quản lý danh mục", icon: FolderTree },
+    { id: "promotions", label: "Quản lý khuyến mãi", icon: Gift },
+    { id: "customers", label: "Quản lý khách hàng", icon: Users },
+    { id: "reports", label: "Báo cáo", icon: FileText },
+    { id: "settings", label: "Cài đặt", icon: Settings },
+  ];
+
+  return (
+    <aside
+      className={`${
+        isOpen ? "w-64" : "w-20"
+      } bg-white border-r border-gray-200 transition-all duration-300`}
+    >
+>>>>>>> Bao
       <div className="flex items-center gap-2 px-4 py-5 border-b border-gray-200">
         <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
           <span className="text-white font-bold text-sm">SU</span>
         </div>
+<<<<<<< HEAD
         {isOpen && <span className="font-bold text-xl text-gray-800">ShopUte</span>}
+=======
+        {isOpen && (
+          <span className="font-bold text-xl text-gray-800">ShopUte</span>
+        )}
+>>>>>>> Bao
       </div>
 
       <nav className="p-4 space-y-2">
@@ -45,6 +93,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, activeMenu, onMenuClic
           return (
             <button
               key={item.id}
+<<<<<<< HEAD
               onClick={() => onMenuClick(item.id)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                 isActive ? 'bg-purple-50 text-purple-600' : 'text-gray-600 hover:bg-gray-50'
@@ -52,6 +101,22 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, activeMenu, onMenuClic
             >
               <Icon size={20} />
               {isOpen && <span className="text-sm font-medium">{item.label}</span>}
+=======
+              onClick={() => {
+                onMenuClick(item.id);
+                if (item.path) router.push(item.path);
+              }}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                isActive
+                  ? "bg-purple-50 text-purple-600"
+                  : "text-gray-600 hover:bg-gray-50"
+              }`}
+            >
+              <Icon size={20} />
+              {isOpen && (
+                <span className="text-sm font-medium">{item.label}</span>
+              )}
+>>>>>>> Bao
             </button>
           );
         })}
