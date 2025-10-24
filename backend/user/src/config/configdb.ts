@@ -9,9 +9,9 @@ const sequelize = new Sequelize("shopute", "root", DB_PASS, {
   dialect: "mysql",
   timezone: "+07:00",
   logging: false,
-  dialectOptions: {
-    useUTC: false,
-  },
+  // dialectOptions: {
+  //   useUTC: false,
+  // },
 });
 
 export const connectDB = async (): Promise<void> => {

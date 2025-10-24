@@ -48,3 +48,31 @@ export async function sendOTPEmail(to: string, otp: number | string) {
     `,
   });
 }
+
+export async function sendNotificationEmail(to: string, title: string, message: string, url?: string) {
+  const tx = await getTransporter();
+  const from = process.env.SMTP_FROM || process.env.SMTP_USER!;
+
+  const htmlBody = `
+    <div style="font-family:Arial,sans-serif;line-height:1.6;color:#111">
+      <h2 style="color:#f97316;margin-bottom:8px">${title}</h2>
+      <p>${message}</p>
+      ${
+        url
+          ? `<a href="${url}" style="display:inline-block;margin-top:10px;padding:10px 16px;
+               background-color:#f97316;color:#fff;text-decoration:none;border-radius:4px">
+               Xem chi tiết
+             </a>`
+          : ""
+      }
+      <p style="margin-top:20px;font-size:13px;color:#555">UTEShop Team</p>
+    </div>
+  `;
+
+  await tx.sendMail({
+    from,
+    to,
+    subject: `🔔 ${title}`,
+    html: htmlBody,
+  });
+}

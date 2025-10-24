@@ -1,6 +1,6 @@
 import { FC, useState, useEffect } from "react";
-import { useDispatch } from "react-redux";
-import { AppDispatch } from "../store/store";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "../store/store";
 import { addToCart } from "../store/cartSlice";
 import { wishlistApi } from "../apis/wishlistApi";
 import { Heart } from "lucide-react";
@@ -23,8 +23,10 @@ const ProductCard: FC<ProductCardProps> = ({
   const formatPrice = (value: number) => {
     return value.toLocaleString("vi-VN") + " VNĐ";
   };
-
+  const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);  
   useEffect(() => {
+   
+    if (!isAuthenticated) return;
     const checkWishlist = async () => {
       try {
         const res = await wishlistApi.getWishlist();

@@ -23,14 +23,14 @@ class ApiClient {
     options: RequestInit = {}
   ): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
-
+    
     const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-      ...(options.headers as Record<string, string>),
+    'Content-Type': 'application/json',
+    ...(options.headers as Record<string, string>),
     };
 
     if (this.accessToken) {
-      headers["Authorization"] = `Bearer ${this.accessToken}`;
+      headers['Authorization'] = `Bearer ${this.accessToken}`;
     }
 
     try {
@@ -55,23 +55,19 @@ class ApiClient {
       }
       throw {
         statusCode: 500,
-        message: "Không thể kết nối đến server",
+        message: 'Không thể kết nối đến server',
       } as ApiError;
     }
   }
 
   async get<T>(endpoint: string, options?: RequestInit): Promise<T> {
-    return this.request<T>(endpoint, { ...options, method: "GET" });
+    return this.request<T>(endpoint, { ...options, method: 'GET' });
   }
 
-  async post<T>(
-    endpoint: string,
-    data?: any,
-    options?: RequestInit
-  ): Promise<T> {
+  async post<T>(endpoint: string, data?: any, options?: RequestInit): Promise<T> {
     return this.request<T>(endpoint, {
       ...options,
-      method: "POST",
+      method: 'POST',
       body: JSON.stringify(data),
     });
   }
@@ -88,14 +84,10 @@ class ApiClient {
     });
   }
 
-  async patch<T>(
-    endpoint: string,
-    data?: any,
-    options?: RequestInit
-  ): Promise<T> {
+  async patch<T>(endpoint: string, data?: any, options?: RequestInit): Promise<T> {
     return this.request<T>(endpoint, {
       ...options,
-      method: "PATCH",
+      method: 'PATCH',
       body: JSON.stringify(data),
     });
   }
@@ -107,3 +99,4 @@ class ApiClient {
 
 export const apiClient = new ApiClient(API_URL);
 export default apiClient;
+

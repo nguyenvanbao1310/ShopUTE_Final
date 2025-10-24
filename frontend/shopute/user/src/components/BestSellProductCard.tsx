@@ -2,6 +2,8 @@ import { FC, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Heart, Star } from "lucide-react";
 import { wishlistApi } from "../apis/wishlistApi";
+import { useSelector, useDispatch } from "react-redux";
+import { RootState } from "../store/store";
 
 interface Category {
   id: number;
@@ -21,8 +23,10 @@ interface Product {
 
 const BestSellProductCard: FC<{ product: Product }> = ({ product }) => {
   const [liked, setLiked] = useState(false);
-
+  const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
   useEffect(() => {
+    
+    if (!isAuthenticated) return;
     const checkWishlist = async () => {
       try {
         const res = await wishlistApi.getWishlist();

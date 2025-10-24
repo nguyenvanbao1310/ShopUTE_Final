@@ -11,7 +11,6 @@ import {
   FileText,
   Settings,
 } from "lucide-react";
-
 interface SidebarProps {
   isOpen: boolean;
   activeMenu: string;
