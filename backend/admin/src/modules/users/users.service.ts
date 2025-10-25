@@ -201,4 +201,7 @@ export class UsersService {
   async findById(id: number) {
     return this.repo.findOne({ where: { id } });
   }
+  async save(user: User): Promise<User> {
+    return this.repo.save(user);
+  }
 }

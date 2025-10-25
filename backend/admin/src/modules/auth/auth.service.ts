@@ -3,6 +3,7 @@ import {
   ConflictException,
   UnauthorizedException,
   InternalServerErrorException,
+  ForbiddenException,NotFoundException, BadRequestException, 
 } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
@@ -11,11 +12,13 @@ import { User } from '../users/enitites/user.entity';
 import { JwtUserPayload } from './../../shared/guards/jwt-payload.type';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private users: UsersService,
+    private readonly mailService: MailService,
     private jwt: JwtService,
   ) {}
 
@@ -25,7 +28,7 @@ export class AuthService {
       email: user.email,
       role: user.role,
     };
-    return this.jwt.signAsync(payload, {
+    return await this.jwt.signAsync(payload, {
       secret: process.env.JWT_SECRET,
       expiresIn: '15m',
     });
@@ -37,7 +40,7 @@ export class AuthService {
       email: user.email,
       role: user.role,
     };
-    return this.jwt.signAsync(payload, {
+    return await this.jwt.signAsync(payload, {
       secret: process.env.JWT_SECRET,
       expiresIn: '7d',
     });
@@ -50,7 +53,8 @@ export class AuthService {
 
     // 2️⃣ Hash mật khẩu
     const hashed = await bcrypt.hash(dto.password, 10);
-
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpire = new Date(Date.now() + 10 * 60 * 1000);
     // 3️⃣ Tạo user mới
     const user = await this.users
       .create({
@@ -60,27 +64,19 @@ export class AuthService {
         phone: dto.phone?.trim() ?? undefined,
         password: hashed,
         role: 'admin',
-        isActive: true,
+        otp,
+        otpExpire,
+        isActive: false,
       })
       .catch((err) => {
         console.error('❌ Lỗi khi tạo user:', err);
         throw new InternalServerErrorException('Không thể tạo tài khoản');
       });
-    // 5️⃣ Trả về response an toàn
-    return {
-      message: 'Đăng ký thành công',
-      user: {
-        id: user.id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        phone: user.phone,
-        role: user.role,
-        isActive: user.isActive,
-        createdAt: user.createdAt,
-      },
-    };
+    await this.mailService.sendOtpEmail(user.email, otp);
+    return { message: 'Vui lòng kiểm tra email để xác thực tài khoản' };
   }
+
+  
 
   async login(dto: LoginDto) {
     const user = await this.users.findByEmail(dto.email);
@@ -89,8 +85,28 @@ export class AuthService {
     const match = await bcrypt.compare(dto.password, user.password);
     if (!match) throw new UnauthorizedException('Sai email hoặc mật khẩu');
 
-    if (!user.isActive)
+    if (!user.isActive && !user.otp && !user.otpExpire) {
       throw new UnauthorizedException('Tài khoản đã bị vô hiệu hóa');
+  }
+
+  if (!user.isActive && user.otp) {
+    const now = new Date();
+
+    // OTP đã hết hạn → tạo mới và gửi lại
+    if (!user.otpExpire || user.otpExpire < now) {
+      const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
+      user.otp = newOtp;
+      user.otpExpire = new Date(now.getTime() + 10 * 60 * 1000); // +10 phút
+      await this.users.save(user);
+
+      await this.mailService.sendOtpEmail(user.email, newOtp);
+      throw new UnauthorizedException('OTP đã hết hạn. Hệ thống đã gửi mã mới đến email của bạn.');
+    }
+
+    // OTP vẫn còn hạn → gửi lại mail OTP
+    await this.mailService.sendOtpEmail(user.email, user.otp);
+    throw new UnauthorizedException('Tài khoản chưa được xác thực. Vui lòng kiểm tra email để nhập OTP.');
+  }
 
     const [access, refresh] = await Promise.all([
       this.signAccess(user),
@@ -115,4 +131,42 @@ export class AuthService {
       throw new UnauthorizedException('Refresh token không hợp lệ');
     }
   }
+
+  async verifyOtp(email: string, otp: string) {
+    const user = await this.users.findByEmail(email);
+    if (!user) throw new NotFoundException('Không tìm thấy tài khoản');
+
+    // 1️⃣ Kiểm tra nếu tài khoản đã active
+    if (user.isActive) throw new BadRequestException('Tài khoản đã được kích hoạt');
+
+    // 2️⃣ Kiểm tra nếu bị admin vô hiệu hóa
+    if (!user.otp && !user.otpExpire)
+      throw new ForbiddenException('Tài khoản bị vô hiệu hóa bởi quản trị viên');
+
+    // 3️⃣ Kiểm tra OTP
+    if (!user.otpExpire || user.otpExpire < new Date()) {
+    throw new BadRequestException('OTP đã hết hạn');
+  }
+
+    if (user.otp !== otp)
+      throw new BadRequestException('OTP không đúng');
+    user.isActive = true;
+    user.otp = null;
+    user.otpExpire = null;
+    await this.users.save(user);
+
+    return { message: 'Xác thực email thành công!' };
+  }
+  async resendOtp(email: string) {
+    const user = await this.users.findByEmail(email);
+    if (!user) throw new NotFoundException('Không tìm thấy tài khoản');
+    if (user.isActive) throw new BadRequestException('Tài khoản đã được kích hoạt');
+    const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    user.otp = newOtp;
+    user.otpExpire = new Date(Date.now() + 10 * 60 * 1000);
+    await this.users.save(user);
+    await this.mailService.sendOtpEmail(user.email, newOtp);
+    return { message: 'Mã OTP mới đã được gửi đến email của bạn.' };
+  }
+
 }
