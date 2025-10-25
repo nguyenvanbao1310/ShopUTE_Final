@@ -20,10 +20,10 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, activeMenu, onMenuClick }) => {
   const menuItems: { id: string; label: string; icon: React.ElementType; href?: string }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard , href: '/admin'},
-    { id: 'products', label: 'Quản lý sản phẩm', icon: Package },
+    { id: 'products', label: 'Quản lý sản phẩm', icon: Package, href: "/products" },
     { id: 'orders', label: 'Quản lý đơn hàng', icon: ShoppingCart },
     { id: 'categories', label: 'Quản lý danh mục', icon: FolderTree },
-    { id: 'promotions', label: 'Quản lý khuyến mãi', icon: Gift },
+    { id: 'promotions', label: 'Quản lý khuyến mãi', icon: Gift, href: '/admin/coupons' },
     { id: 'customers', label: 'Quản lý khách hàng', icon: Users, href: '/admin/users' },
     { id: 'reports', label: 'Báo cáo', icon: FileText },
     { id: 'settings', label: 'Cài đặt', icon: Settings },
@@ -64,3 +64,4 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, activeMenu, onMenuClic
     </aside>
   );
 };
+export default Sidebar;

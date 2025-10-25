@@ -27,7 +27,8 @@ export function UserTable({
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {users.map((u) => (
-            <tr key={u.id}>
+            <tr className='hover:bg-gray-50 hover:font-medium' 
+            key={u.id}>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{`${u.firstName} ${u.lastName}`}</td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{u.email}</td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">{u.role}</td>
@@ -52,7 +53,9 @@ export function UserTable({
                 </div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{u.loyaltyPoints}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{u.createdAt}</td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                {new Date(u.createdAt).toLocaleDateString("vi-VN", {day: "2-digit",month: "2-digit",year: "numeric"})}
+                </td>
             </tr>
           ))}
           {users.length === 0 && (
