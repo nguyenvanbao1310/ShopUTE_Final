@@ -7,7 +7,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Product, productApi } from "@/lib/productApi";
+import { Product, productApi, ProductImage } from "@/lib/productApi";
 
 export default function EditProductModal({
   open,
@@ -23,14 +23,32 @@ export default function EditProductModal({
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imageObjects, setImageObjects] = useState<
+    (ProductImage | { url: string; file?: File })[]
+  >([]);
+
+  const [thumbnailRemoved, setThumbnailRemoved] = useState(false);
+
   // Khi mở modal, tự load dữ liệu cũ
   useEffect(() => {
     if (product) {
-      setThumbnailPreview(product.thumbnailUrl || null);
+      const API_URL =
+        process.env.NEXT_PUBLIC_API_BASE_IMAGE_URL || "http://localhost:3000";
 
-      // Gọi API để lấy ảnh phụ
+      // Ảnh thumbnail cũ
+      setThumbnailPreview(
+        product.thumbnailUrl ? `${API_URL}/${product.thumbnailUrl}` : null
+      );
+
+      // Ảnh phụ
       productApi.getImages(product.id).then((imgs) => {
-        setImagePreviews(imgs.map((img) => img.url));
+        const formatted = imgs.map((img) => ({
+          id: img.id,
+          url: `${API_URL}/${img.url}`,
+        }));
+        setImageObjects(formatted);
+        setImagePreviews(formatted.map((img) => img.url));
       });
     }
   }, [product]);
@@ -43,19 +61,93 @@ export default function EditProductModal({
 
   const handleImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    const newPreviews = files.map((file) => URL.createObjectURL(file));
-    // ✅ Giữ lại ảnh cũ + thêm ảnh mới
-    setImagePreviews((prev) => [...prev, ...newPreviews]);
+    const newObjs = files.map((file) => ({
+      url: URL.createObjectURL(file),
+      file,
+    }));
+
+    setImageObjects((prev) => [...prev, ...newObjs]);
+    setImagePreviews((prev) => [...prev, ...newObjs.map((obj) => obj.url)]);
+    setImageFiles((prev) => [...prev, ...files]);
   };
 
-  const handleRemoveThumbnail = () => setThumbnailPreview(null);
-  const handleRemoveImage = (index: number) =>
+  const handleRemoveThumbnail = () => {
+    setThumbnailPreview(null);
+    setThumbnailRemoved(true);
+  };
+
+  const handleRemoveImage = async (index: number) => {
+    const target = imageObjects[index];
+    if (!target) return;
+
+    try {
+      // Nếu là ảnh cũ (đã có id trong DB)
+      if ("id" in target && target.id) {
+        await productApi.deleteImage(target.id);
+      }
+    } catch (err) {
+      console.error("Lỗi khi xoá ảnh:", err);
+    }
+
+    // Xóa khỏi UI
+    setImageObjects((prev) => prev.filter((_, i) => i !== index));
     setImagePreviews((prev) => prev.filter((_, i) => i !== index));
+    setImageFiles((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!product) return;
-    const formData = new FormData(e.currentTarget);
+
+    const form = e.currentTarget;
+    const formData = new FormData();
+
+    // === Validate: phải có ít nhất 1 ảnh phụ ===
+    const totalImages =
+      imageObjects.length +
+      ((form.querySelector('input[name="images"]') as HTMLInputElement)?.files
+        ?.length || 0);
+
+    if (totalImages === 0) {
+      alert("❌ Vui lòng chọn ít nhất một ảnh phụ cho sản phẩm!");
+      return;
+    }
+
+    // Thêm thông tin text
+    formData.append("name", form.name.value);
+    formData.append("brand", form.brand.value);
+    formData.append("description", form.description.value);
+    formData.append("categoryId", form.categoryId.value);
+    formData.append("stock", form.stock.value);
+    formData.append("price", form.price.value);
+    formData.append("status", form.status.value);
+    formData.append("cpu", form.cpu.value);
+    formData.append("ram", form.ram.value);
+    formData.append("storage", form.storage.value);
+    formData.append("gpu", form.gpu.value);
+    formData.append("screen", form.screen.value);
+
+    if (thumbnailRemoved) {
+      formData.append("removeThumbnail", "true");
+    }
+    // Thêm ảnh thumbnail (nếu có chọn)
+    const thumbnailInput = form.querySelector(
+      'input[name="thumbnail"]'
+    ) as HTMLInputElement;
+    if (thumbnailInput?.files?.[0]) {
+      formData.append("thumbnail", thumbnailInput.files[0]);
+    }
+
+    // Thêm ảnh phụ (nếu có)
+    const imagesInput = form.querySelector(
+      'input[name="images"]'
+    ) as HTMLInputElement;
+    if (imagesInput?.files?.length) {
+      for (const file of imagesInput.files) {
+        formData.append("images", file);
+      }
+    }
+
     onSubmit(product.id, formData);
   };
 
@@ -69,7 +161,11 @@ export default function EditProductModal({
         </DialogHeader>
 
         {product && (
-          <form onSubmit={handleSubmit} className="mt-4 grid grid-cols-3 gap-6">
+          <form
+            onSubmit={handleSubmit}
+            encType="multipart/form-data"
+            className="mt-4 grid grid-cols-3 gap-6"
+          >
             {/* LEFT SECTION */}
             <div className="col-span-2 flex flex-col gap-6">
               {/* Product Info */}
