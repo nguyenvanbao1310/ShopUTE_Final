@@ -9,6 +9,7 @@ export type Product = {
   stock: number;
   status: "ACTIVE" | "INACTIVE";
   thumbnailUrl?: string;
+  imageUrls?: string[];
   categoryId: number;
   brand: string;
   cpu: string;
@@ -59,5 +60,9 @@ export const productApi = {
   // Xoá sản phẩm
   async remove(id: number) {
     return apiClient.delete(`/products/${id}`);
+  },
+
+  async deleteImage(imageId: number) {
+    return apiClient.delete(`/product-images/${imageId}`);
   },
 };

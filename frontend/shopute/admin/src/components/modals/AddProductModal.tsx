@@ -125,6 +125,7 @@ export default function AddProductModal({
                   type="file"
                   accept="image/*"
                   multiple
+                  required
                   name="images"
                   onChange={handleImagesChange}
                   className="border border-dashed border-gray-400 p-3 rounded w-full cursor-pointer mt-1"

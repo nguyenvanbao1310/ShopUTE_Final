@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ProductImage } from './entities/product-image.entity';
@@ -19,5 +19,15 @@ export class ProductImageService {
       where: { productId },
       order: { position: 'ASC' }, // sắp xếp theo thứ tự nếu có
     });
+  }
+
+  async remove(id: number) {
+    const image = await this.productImageRepository.findOne({ where: { id } });
+    if (!image) {
+      throw new NotFoundException('Ảnh không tồn tại');
+    }
+
+    await this.productImageRepository.remove(image);
+    return { message: 'Xóa ảnh thành công', id };
   }
 }

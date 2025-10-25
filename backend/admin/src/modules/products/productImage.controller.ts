@@ -1,4 +1,4 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Param, Delete } from '@nestjs/common';
 import { ProductImageService } from './productImage.service';
 
 @Controller('product-images')
@@ -15,5 +15,10 @@ export class ProductImageController {
   @Get(':productId')
   async getByProductId(@Param('productId') productId: number) {
     return this.productImageService.findByProductId(productId);
+  }
+
+  @Delete(':id')
+  async remove(@Param('id') id: number) {
+    return this.productImageService.remove(id);
   }
 }

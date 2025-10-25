@@ -17,6 +17,8 @@ export default function ProductsPage() {
   const [openEdit, setOpenEdit] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_IMAGE_URL;
+
   // 🧩 Load danh sách sản phẩm
   useEffect(() => {
     fetchProducts();
@@ -109,25 +111,51 @@ export default function ProductsPage() {
   };
 
   // 💾 Lưu chỉnh sửa
-  const handleEditSubmit = async (id: number, data: FormData) => {
-    const updated = {
-      name: data.get("name") as string,
-      description: data.get("description") as string,
-      price: Number(data.get("price")),
-      stock: Number(data.get("stock")),
-      categoryId: Number(data.get("categoryId")),
-      brand: data.get("brand") as string,
-      cpu: data.get("cpu") as string,
-      ram: data.get("ram") as string,
-      storage: data.get("storage") as string,
-      gpu: data.get("gpu") as string,
-      screen: data.get("screen") as string,
-      status: data.get("status") as "ACTIVE" | "INACTIVE",
-    };
-    await productApi.update(id, updated);
-    alert("✅ Cập nhật thành công!");
-    setOpenEdit(false);
-    await fetchProducts();
+  const handleEditSubmit = async (id: number, formData: FormData) => {
+    try {
+      const updatedProduct = {
+        name: formData.get("name") as string,
+        description: formData.get("description") as string,
+        price: Number(formData.get("price")),
+        stock: Number(formData.get("stock")),
+        categoryId: Number(formData.get("categoryId")),
+        brand: formData.get("brand") as string,
+        cpu: formData.get("cpu") as string,
+        ram: formData.get("ram") as string,
+        storage: formData.get("storage") as string,
+        gpu: formData.get("gpu") as string,
+        screen: formData.get("screen") as string,
+        status: ((formData.get("status") as string) === "ACTIVE"
+          ? "ACTIVE"
+          : "INACTIVE") as "ACTIVE" | "INACTIVE",
+        thumbnailUrl: formData.get("thumbnailUrl") as string | undefined,
+        imageUrls: [] as string[],
+      };
+
+      console.log("✅ Sending updated product:", updatedProduct);
+
+      // Nếu có thumbnail mới
+      const thumbnailFile = formData.get("thumbnail") as File;
+      if (thumbnailFile && thumbnailFile.size > 0) {
+        const uploadedUrl = await uploadImage(thumbnailFile);
+        updatedProduct.thumbnailUrl = uploadedUrl;
+      }
+
+      // Nếu có ảnh phụ mới
+      const images = formData.getAll("images") as File[];
+      if (images.length > 0) {
+        const uploadedUrls = await Promise.all(images.map(uploadImage));
+        updatedProduct.imageUrls = uploadedUrls;
+      }
+
+      await productApi.update(id, updatedProduct);
+      alert("✅ Cập nhật sản phẩm thành công!");
+      setOpenEdit(false);
+      await fetchProducts();
+    } catch (err) {
+      console.error("❌ Update failed:", err);
+      alert("Cập nhật thất bại!");
+    }
   };
 
   return (
@@ -193,7 +221,7 @@ export default function ProductsPage() {
                     <td className="p-2">
                       {p.thumbnailUrl ? (
                         <img
-                          src={p.thumbnailUrl}
+                          src={`${API_BASE_URL}/${p.thumbnailUrl}`}
                           alt={p.name}
                           className="w-16 h-16 object-cover rounded-md border"
                         />
