@@ -1,4 +1,4 @@
-type FlaggedComment = {
+export type AdminComment = {
   id: number;
   productId: number;
   productName: string;
@@ -9,8 +9,7 @@ type FlaggedComment = {
   rating: number;
   comment: string | null;
   containsProfanity: boolean;
-  createdAt: Date;
+  createdAt: string | Date;
   reason: string;
 };
 
-export type { FlaggedComment };

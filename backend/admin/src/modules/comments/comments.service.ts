@@ -30,6 +30,7 @@ export class CommentsService {
         'r.createdAt AS createdAt',
         "COALESCE(p.name, CONCAT('Product#', r.productId)) AS productName",
         "COALESCE(CONCAT(TRIM(COALESCE(u.firstName, '')), ' ', TRIM(COALESCE(u.lastName, ''))), CONCAT('User#', r.userId)) AS userName",
+        'u.email AS userEmail',
         '(u.id IS NOT NULL) AS userActive',
       ])
       .orderBy('r.createdAt', 'DESC');
@@ -52,6 +53,7 @@ export class CommentsService {
         productName: r.productName ?? `Product#${r.productId}`,
         userId: r.userId ?? null,
         userName: r.userName,
+        userEmail: r.userEmail ?? null,
         userActive: typeof r.userActive === 'boolean' ? r.userActive : r.userActive === 1,
         rating: ratingNum,
         comment: r.comment ?? null,

@@ -10,6 +10,7 @@ import {
   Users,
   FileText,
   Settings,
+  MessageSquare
 } from "lucide-react";
 interface SidebarProps {
   isOpen: boolean;
@@ -19,6 +20,7 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, activeMenu, onMenuClick }) => {
   const menuItems: { id: string; label: string; icon: React.ElementType; href?: string }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard , href: '/admin'},
+    { id: 'comments', label: 'Quản lý đánh giá', icon: MessageSquare, href: '/admin/comments' },
     { id: 'products', label: 'Quản lý sản phẩm', icon: Package, href: "/products" },
     { id: 'orders', label: 'Quản lý đơn hàng', icon: ShoppingCart },
     { id: 'categories', label: 'Quản lý danh mục', icon: FolderTree },

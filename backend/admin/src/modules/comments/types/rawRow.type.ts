@@ -3,6 +3,7 @@ type RawRow = {
   productId: number;
   productName: string | null;
   userId: number | null;
+  userEmail?: string | null;
   userActive: 0 | 1 | boolean;
   rating: string | number;
   comment: string | null;
