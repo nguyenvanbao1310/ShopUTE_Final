@@ -7,7 +7,7 @@ import {
 import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
-import { User } from '../users/entities/user.entity';
+import { User } from '../users/enitites/user.entity';
 import { JwtUserPayload } from './../../shared/guards/jwt-payload.type';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -105,7 +105,6 @@ export class AuthService {
       const decoded = await this.jwt.verifyAsync<JwtUserPayload>(refreshToken, {
         secret: process.env.JWT_SECRET,
       }) as JwtUserPayload;
-
       const user = await this.users.findById(decoded.sub) as User;
       if (!user) throw new UnauthorizedException('User không tồn tại');
 
