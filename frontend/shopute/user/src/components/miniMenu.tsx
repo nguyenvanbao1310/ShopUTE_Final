@@ -61,15 +61,6 @@ const UserMenu = ({ user, handleLogout }: any) => {
               </Link>
             </li>
             <li>
-              <Link
-                to="/change-password"
-                className="block px-4 py-2 hover:bg-gray-100"
-                onClick={() => setOpen(false)}
-              >
-                Đổi mật khẩu
-              </Link>
-            </li>
-            <li>
               <button
                 onClick={() => {
                   handleLogout();

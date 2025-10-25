@@ -1,6 +1,6 @@
 import { useSelector, useDispatch } from "react-redux";
 import { selectSelectedItems, CartItemDTO } from "../../store/cartSlice";
-import { Voucher } from "../../types/voucher";
+import { Coupon } from "../../types/counpon";
 import { ShippingMethod } from "../../types/shippingMethod";
 import { Address } from "../../types/address";
 import { createOrder, payWithMomo } from "../../apis/orderApi";
@@ -11,7 +11,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 interface OrderSummaryProps {
-  voucher: Voucher | null;
+  coupon: Coupon | null;
   paymentMethod: string;
   shippingMethod: ShippingMethod | null;
   address: Address | null;
@@ -19,7 +19,7 @@ interface OrderSummaryProps {
 }
 
 const OrderSummary = ({ 
-  voucher, 
+  coupon, 
   paymentMethod, 
   shippingMethod, 
   address, 
@@ -36,7 +36,7 @@ const OrderSummary = ({
   // Sử dụng custom hook để tính toán
   const calculation = useOrderCalculation({
     items,
-    voucher,
+    coupon,
     shippingMethod,
     usedPoints
   });
@@ -86,7 +86,7 @@ const OrderSummary = ({
         deliveryAddress: `${address!.street}, ${address!.ward}, ${address!.province}`,
         shippingMethodId: shippingMethod!.id,
         paymentMethod,
-        voucherId: voucher?.id ?? null,
+        couponId: coupon?.id ?? null,
         usedPoints,
         items: items.map((item) => ({
           productId: item.productId,
@@ -198,9 +198,9 @@ const OrderSummary = ({
               </div>
             )}
             
-            {calculation.discount > 0 && voucher && (
+            {calculation.discount > 0 && coupon && (
               <div className="flex justify-between items-center py-2">
-                <span className="text-gray-600">Giảm giá ({voucher.code})</span>
+                <span className="text-gray-600">Giảm giá ({coupon.code})</span>
                 <span className="font-medium text-red-600">
                   -{calculation.discount.toLocaleString()}₫
                 </span>

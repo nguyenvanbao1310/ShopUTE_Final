@@ -8,7 +8,7 @@ import type { OrderCreationAttributes } from "../models/Order";
 import type { OrderDetailCreationAttributes } from "../models/OrderDetail";
 import { OrderStatus, PaymentStatus } from "../types/order";
 import CancelRequest from "../models/CancelRequest";
-import Voucher from "../models/Voucher";
+import Coupon from "../models/Coupon";
 import ShippingMethod from "../models/ShippingMethod";
 import { createNotification } from "../services/notificationService";
 
@@ -18,15 +18,16 @@ export interface CreateOrderInput {
   paymentMethod?: string | null;
   note?: string | null;
   deliveryAddress?: string | null;
-  voucherId?: number | null;
+  couponId?: number | null;
   shippingMethodId: number;
   usedPoints?: number;
   items: {
     productId: number;
     quantity: number;
-    price: number; 
+    price: number;
   }[];
 }
+
 
 
 export interface CancelResult {
@@ -52,16 +53,43 @@ export async function createOrder(data: CreateOrderInput) {
         shippingFee = Number(shipping.fee);
       }
     }
-    // 3. Tính giảm giá voucher
     let discountAmount = 0;
-    if (data.voucherId) {
-      const voucher = await Voucher.findByPk(data.voucherId);
-      if (voucher) {
-        if (voucher.discountType === "PERCENT") {
-          discountAmount = (subtotal * Number(voucher.discountValue)) / 100;
-        } else {
-          discountAmount = Number(voucher.discountValue);
+    if (data.couponId) {
+      const coupon = await Coupon.findByPk(data.couponId);
+
+      if (coupon) {
+        const now = new Date();
+
+        if (coupon.isUsed) {
+          throw new Error("Mã giảm giá này đã được sử dụng.");
         }
+
+        if (coupon.expiresAt && coupon.expiresAt < now) {
+          throw new Error("Mã giảm giá này đã hết hạn.");
+        }
+
+        if (coupon.minOrderAmount && subtotal < Number(coupon.minOrderAmount)) {
+          throw new Error(
+            `Đơn hàng cần tối thiểu ${coupon.minOrderAmount}đ để áp dụng mã này.`
+          );
+        }
+
+        if (coupon.type === "PERCENT") {
+          const percentValue = Number(coupon.value);
+          discountAmount = (subtotal * percentValue) / 100;
+          // nếu có giới hạn giảm tối đa
+          if (coupon.maxDiscountValue) {
+            discountAmount = Math.min(
+              discountAmount,
+              Number(coupon.maxDiscountValue)
+            );
+          }
+        } else if (coupon.type === "AMOUNT") {
+          discountAmount = Number(coupon.value);
+        }
+
+        // ✅ đánh dấu coupon đã dùng
+        await coupon.update({ isUsed: true, usedAt: new Date() }, { transaction: t });
       }
     }
     // 4. Tính giảm giá từ điểm thưởng
@@ -83,7 +111,7 @@ export async function createOrder(data: CreateOrderInput) {
         finalAmount: finalAmount.toFixed(2),
         usedPoints,
         pointsDiscountAmount: pointsDiscountAmount.toFixed(2),
-        voucherId: data.voucherId ?? null,
+        couponId: data.couponId ?? null,
         shippingMethodId: data.shippingMethodId,
         status: "PENDING",
         paymentMethod: data.paymentMethod ?? "COD",

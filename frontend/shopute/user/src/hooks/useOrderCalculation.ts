@@ -1,12 +1,12 @@
 import { useMemo } from "react";
 import { CartItemDTO } from "../store/cartSlice";
-import { Voucher } from "../types/voucher";
+import { Coupon } from "../types/counpon";
 import { ShippingMethod } from "../types/shippingMethod";
 import { POINTS_TO_VND_RATE } from "../types/order";
 
 interface UseOrderCalculationParams {
   items: CartItemDTO[];
-  voucher: Voucher | null;
+  coupon: Coupon | null;
   shippingMethod: ShippingMethod | null;
   usedPoints: number;
 }
@@ -23,61 +23,57 @@ interface OrderCalculation {
 
 export const useOrderCalculation = ({
   items,
-  voucher,
+  coupon,
   shippingMethod,
-  usedPoints
+  usedPoints,
 }: UseOrderCalculationParams): OrderCalculation => {
   return useMemo(() => {
     const errors: string[] = [];
-    
-    // Tính subtotal
-    const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    
-    // Validate items
-    if (items.length === 0) {
-      errors.push("Giỏ hàng trống");
-    }
-    
-    // Tính shipping fee
+
+    const subtotal = items.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    );
+
+    if (items.length === 0) errors.push("Giỏ hàng trống");
+
     const shippingFee = shippingMethod ? Number(shippingMethod.fee) : 0;
-    
-    // Tính discount từ voucher
+
+    // 💰 Tính giảm giá coupon
     let discount = 0;
-    if (voucher && subtotal > 0) {
-      if (voucher.discountType === "PERCENT") {
+    if (coupon && subtotal > 0) {
+      if (coupon.type === "PERCENT") {
         discount = Math.min(
-          (subtotal * Number(voucher.discountValue)) / 100,
-          voucher.maxDiscountValue ? Number(voucher.maxDiscountValue) : Infinity
+          (subtotal * Number(coupon.value)) / 100,
+          coupon.maxDiscountValue ? Number(coupon.maxDiscountValue) : Infinity
         );
       } else {
-        discount = Number(voucher.discountValue);
+        discount = Number(coupon.value);
       }
-      
-      // Validate voucher minimum order
-      if (voucher.minOrderValue && subtotal < Number(voucher.minOrderValue)) {
-        errors.push(`Đơn hàng tối thiểu ${Number(voucher.minOrderValue).toLocaleString()}₫ để sử dụng voucher`);
-        discount = 0; // Reset discount nếu không đủ điều kiện
+
+      if (coupon.minOrderAmount && subtotal < Number(coupon.minOrderAmount)) {
+        errors.push(
+          `Đơn hàng tối thiểu ${Number(
+            coupon.minOrderAmount
+          ).toLocaleString()}₫ để sử dụng coupon`
+        );
+        discount = 0;
       }
     }
-    
-    // Tính discount từ points
+
     const discountFromPoints = usedPoints * POINTS_TO_VND_RATE;
-    
-    // Tính final total
     let finalTotal = subtotal + shippingFee - discount - discountFromPoints;
-    
-    // Validate final total không âm
+
     if (finalTotal < 0) {
       finalTotal = 0;
       errors.push("Tổng giảm giá vượt quá giá trị đơn hàng");
     }
-    
-    // Validate minimum order (thường >= 0 hoặc có thể có minimum)
-    const MINIMUM_ORDER = 10000; // 10k VND minimum
+
+    const MINIMUM_ORDER = 10000;
     if (finalTotal > 0 && finalTotal < MINIMUM_ORDER) {
       errors.push(`Đơn hàng tối thiểu ${MINIMUM_ORDER.toLocaleString()}₫`);
     }
-    
+
     return {
       subtotal,
       shippingFee,
@@ -85,7 +81,7 @@ export const useOrderCalculation = ({
       discountFromPoints,
       finalTotal,
       isValidOrder: errors.length === 0,
-      errors
+      errors,
     };
-  }, [items, voucher, shippingMethod, usedPoints]);
+  }, [items, coupon, shippingMethod, usedPoints]);
 };
