@@ -2,26 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Order } from '../orders/entities/order.entity';
-
-type NotificationListItem = {
-  id: number;
-  orderId: number;
-  customerId: number | null;
-  status: string;
-  createdAt: Date;
-  title: string;
-  message: string;
-};
-
-type RawOrderRow = {
-  orderId: number;
-  customerId: number | null;
-  code: string | null;
-  status: 'PENDING' | 'CANCEL_REQUESTED';
-  createdAt: Date;
-  firstName: string | null;
-  lastName: string | null;
-};
+import { User } from '../users/entities/user.entity';
+import { NotificationListItem } from './types/notificationListItem.type';
+import { RawOrderRow } from './types/rawOrderRow.type';
 
 @Injectable()
 export class NotificationsService {
@@ -33,7 +16,7 @@ export class NotificationsService {
   async findFromOrders(): Promise<NotificationListItem[]> {
     const qb = this.orderRepo
       .createQueryBuilder('o')
-      .leftJoin('users', 'u', 'u.id = o.userId')
+      .leftJoin(User, 'u', 'u.id = o.userId')
       .select([
         'o.id AS orderId',
         'o.userId AS customerId',

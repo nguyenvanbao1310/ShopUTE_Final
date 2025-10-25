@@ -194,7 +194,10 @@ const authSlice = createSlice({
       state.isAuthenticated = false;
       try {
         localStorage.removeItem("token");
-      } catch {}
+        localStorage.removeItem("accessToken");
+      } catch (err) {
+        console.error("Failed to clear storage on logout", err);
+      }
     },
   },
   extraReducers: (builder) => {

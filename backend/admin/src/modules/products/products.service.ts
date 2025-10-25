@@ -4,12 +4,16 @@ import { Repository } from 'typeorm';
 import { Product } from './entities/product.entity';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { ProductImage } from './entities/product-image.entity';
 
 @Injectable()
 export class ProductsService {
   constructor(
     @InjectRepository(Product)
     private readonly productRepo: Repository<Product>,
+
+    @InjectRepository(ProductImage)
+    private productImageRepository: Repository<ProductImage>,
   ) {}
 
   findAll() {
@@ -20,9 +24,25 @@ export class ProductsService {
     return this.productRepo.findOneBy({ id });
   }
 
-  create(data: CreateProductDto) {
-    const product = this.productRepo.create(data);
-    return this.productRepo.save(product);
+  async create(createProductDto: CreateProductDto) {
+    const { imageUrls, ...productData } = createProductDto;
+
+    // 1️⃣ Lưu product
+    const savedProduct = await this.productRepo.save(productData);
+
+    // 2️⃣ Nếu có ảnh phụ -> lưu vào bảng product_images
+    if (imageUrls && imageUrls.length > 0) {
+      const productImages = imageUrls.map((url, index) =>
+        this.productImageRepository.create({
+          url,
+          position: index + 1,
+          product: savedProduct,
+        }),
+      );
+      await this.productImageRepository.save(productImages);
+    }
+
+    return savedProduct;
   }
 
   async update(id: number, data: UpdateProductDto) {
