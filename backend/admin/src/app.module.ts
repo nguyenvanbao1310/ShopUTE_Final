@@ -10,6 +10,7 @@ import { RepliesModule } from './modules/rating-replies/replies.module';
 import { UsersModule } from './modules/users/users.module';
 import { JwtModule } from '@nestjs/jwt';
 import { AuthModule } from './modules/auth/auth.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 @Module({
   imports: [
     ConfigModule.forRoot(),
@@ -36,6 +37,7 @@ import { AuthModule } from './modules/auth/auth.module';
       signOptions: { expiresIn: '15m' },
     }),
     AuthModule,
+    AnalyticsModule
   ],
 })
 export class AppModule {}
