@@ -1,125 +1,67 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { DataSource } from 'typeorm';
-import { InjectDataSource } from '@nestjs/typeorm';
-
-type ReplyRow = {
-  id: number;
-  ratingId: number;
-  adminUserId: number | null;
-  adminName: string | null;
-  message: string;
-  createdAt: Date;
-};
-
-type RawReplyRow = {
-  id: number;
-  ratingId: number;
-  adminUserId: number | null;
-  message: string;
-  createdAt: Date | string;
-  adminName: string | null;
-};
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { ReplyRow } from './types/replyRow.type';
+import { Reply } from './entities/reply.entity';
+import { Rating } from '../comments/entities/rating.entity';
 
 @Injectable()
 export class RepliesService {
-  constructor(@InjectDataSource() private readonly dataSource: DataSource) {}
+  constructor(
+    @InjectRepository(Reply)
+    private readonly replyRepo: Repository<Reply>,
+    @InjectRepository(Rating)
+    private readonly ratingRepo: Repository<Rating>,
+  ) {}
 
   async ensureRatingExists(ratingId: number): Promise<void> {
-    const rows: Array<{ id: number }> = await this.dataSource.query(
-      'SELECT id FROM ratings WHERE id = ? LIMIT 1',
-      [ratingId],
-    );
-    if (!Array.isArray(rows) || rows.length === 0) {
-      throw new NotFoundException('Rating not found');
-    }
+    const exists = await this.ratingRepo.exist({ where: { id: ratingId } });
+    if (!exists) throw new NotFoundException('Rating not found');
   }
 
   async listByRating(ratingId: number): Promise<ReplyRow[]> {
-    const rows: RawReplyRow[] = await this.dataSource.query(
-      `SELECT rr.id, rr.ratingId, rr.adminUserId, rr.message, rr.createdAt,
-              COALESCE(CONCAT(TRIM(COALESCE(u.firstName, '')),' ',TRIM(COALESCE(u.lastName, ''))), CONCAT('Admin#', rr.adminUserId)) AS adminName
-         FROM rating_replies rr
-         LEFT JOIN users u ON u.id = rr.adminUserId
-        WHERE rr.ratingId = ?
-        ORDER BY rr.createdAt DESC`,
-      [ratingId],
-    );
+    const replies = await this.replyRepo.find({
+      where: { ratingId },
+      relations: { adminUser: true },
+      order: { createdAt: 'DESC' },
+    });
 
-    return rows.map((r) => ({
-      id: r.id,
-      ratingId: r.ratingId,
-      adminUserId: r.adminUserId,
-      adminName: r.adminName,
-      message: r.message,
-      createdAt: new Date(r.createdAt),
-    }));
+    return replies.map(this.mapEntityToRow);
   }
 
   async create(ratingId: number, adminUserId: number | null, message: string): Promise<ReplyRow> {
     await this.ensureRatingExists(ratingId);
 
-    const resultRaw: unknown = await this.dataSource.query(
-      'INSERT INTO rating_replies (ratingId, adminUserId, message) VALUES (?, ?, ?)',
-      [ratingId, adminUserId, message],
-    );
+    const toSave = this.replyRepo.create({ ratingId, adminUserId, message });
+    const saved = await this.replyRepo.save(toSave);
+    const withUser = await this.replyRepo.findOne({
+      where: { id: saved.id },
+      relations: { adminUser: true },
+    });
 
-    const extractInsertId = (raw: unknown): number | undefined => {
-      if (Array.isArray(raw)) {
-        const first = raw[0] as unknown;
-        if (first && typeof first === 'object' && 'insertId' in first) {
-          const v = (first as Record<string, unknown>).insertId;
-          return typeof v === 'number' ? v : undefined;
-        }
-        return undefined;
-      }
-      if (raw && typeof raw === 'object' && 'insertId' in raw) {
-        const v = (raw as Record<string, unknown>).insertId;
-        return typeof v === 'number' ? v : undefined;
-      }
-      return undefined;
-    };
-
-    const insertedId = extractInsertId(resultRaw);
-    if (!insertedId) {
-      // fallback: fetch last row for this ratingId
-      const list = await this.listByRating(ratingId);
-      if (list.length === 0) throw new NotFoundException('Failed to create reply');
-      return list[0];
-    }
-
-    const rows: RawReplyRow[] = await this.dataSource.query(
-      `SELECT rr.id, rr.ratingId, rr.adminUserId, rr.message, rr.createdAt,
-              COALESCE(CONCAT(TRIM(COALESCE(u.firstName, '')),' ',TRIM(COALESCE(u.lastName, ''))), CONCAT('Admin#', rr.adminUserId)) AS adminName
-         FROM rating_replies rr
-         LEFT JOIN users u ON u.id = rr.adminUserId
-        WHERE rr.id = ?
-        LIMIT 1`,
-      [insertedId],
-    );
-    const r = rows[0];
-    return {
-      id: r.id,
-      ratingId: r.ratingId,
-      adminUserId: r.adminUserId,
-      adminName: r.adminName,
-      message: r.message,
-      createdAt: new Date(r.createdAt),
-    };
+    if (!withUser) throw new NotFoundException('Failed to create reply');
+    return this.mapEntityToRow(withUser);
   }
 
   async remove(id: number): Promise<void> {
-    const raw: unknown = await this.dataSource.query('DELETE FROM rating_replies WHERE id = ?', [id]);
-    let affected = 0;
-    if (Array.isArray(raw)) {
-      const first = raw[0] as unknown;
-      if (first && typeof first === 'object' && 'affectedRows' in first) {
-        const v = (first as Record<string, unknown>).affectedRows;
-        if (typeof v === 'number') affected = v;
-      }
-    } else if (raw && typeof raw === 'object' && 'affectedRows' in raw) {
-      const v = (raw as Record<string, unknown>).affectedRows;
-      if (typeof v === 'number') affected = v;
-    }
-    if (!affected) throw new NotFoundException('Reply not found');
+    const res = await this.replyRepo.delete(id);
+    if (!res.affected) throw new NotFoundException('Reply not found');
   }
+
+  private mapEntityToRow = (reply: Reply): ReplyRow => {
+    const adminName = reply.adminUser
+      ? `${(reply.adminUser.firstName ?? '').trim()} ${(reply.adminUser.lastName ?? '').trim()}`.trim() || `Admin#${reply.adminUserId}`
+      : reply.adminUserId != null
+      ? `Admin#${reply.adminUserId}`
+      : null;
+
+    return {
+      id: reply.id,
+      ratingId: reply.ratingId,
+      adminUserId: reply.adminUserId,
+      adminName,
+      message: reply.message,
+      createdAt: reply.createdAt instanceof Date ? reply.createdAt : new Date(reply.createdAt),
+    };
+  };
 }

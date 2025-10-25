@@ -16,6 +16,7 @@ const RatingSection: FC<Props> = ({ productId }) => {
 
   const [ratings, setRatings] = useState<RatingItem[]>([]);
   const [ratingsLoading, setRatingsLoading] = useState(true);
+  const [starFilter, setStarFilter] = useState<number | null>(null); // null = Tất cả
 
   const [myRating, setMyRating] = useState<number>(0);
   const [myComment, setMyComment] = useState<string>("");
@@ -97,6 +98,10 @@ const RatingSection: FC<Props> = ({ productId }) => {
       ? ratings.reduce((sum, r) => sum + (r.rating || 0), 0) / ratings.length
       : 0;
 
+  const filteredRatings = starFilter
+    ? ratings.filter((r) => Math.round(r.rating || 0) === starFilter)
+    : ratings;
+
   return (
     <div>
       {/* Submit section */}
@@ -112,9 +117,34 @@ const RatingSection: FC<Props> = ({ productId }) => {
         submitMsg={submitMsg}
       />
 
+      {/* Filter controls */}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        {[
+          { label: "Tất cả", value: null },
+          { label: "5 sao", value: 5 },
+          { label: "4 sao", value: 4 },
+          { label: "3 sao", value: 3 },
+          { label: "2 sao", value: 2 },
+          { label: "1 sao", value: 1 },
+        ].map((opt) => (
+          <button
+            key={String(opt.value)}
+            onClick={() => setStarFilter(opt.value as any)}
+            className={
+              (starFilter === opt.value
+                ? "bg-blue-600 text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200") +
+              " px-3 py-1.5 rounded text-sm"
+            }
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+
       {/* Manage (edit) section */}
       <ManageRatings
-        ratings={ratings}
+        ratings={filteredRatings}
         ratingsLoading={ratingsLoading}
         isAuthenticated={isAuthenticated}
         currentUserId={currentUserId}

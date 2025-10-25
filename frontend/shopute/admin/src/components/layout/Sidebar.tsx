@@ -1,5 +1,6 @@
-'use client';
-import React from 'react';
+"use client";
+import React from "react";
+import { useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Package,
@@ -9,22 +10,22 @@ import {
   Users,
   FileText,
   Settings,
-} from 'lucide-react';
-
+  MessageSquare
+} from "lucide-react";
 interface SidebarProps {
   isOpen: boolean;
   activeMenu: string;
   onMenuClick: (id: string) => void;
 }
-
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, activeMenu, onMenuClick }) => {
-  const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'products', label: 'Quản lý sản phẩm', icon: Package },
+  const menuItems: { id: string; label: string; icon: React.ElementType; href?: string }[] = [
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard , href: '/admin'},
+    { id: 'comments', label: 'Quản lý đánh giá', icon: MessageSquare, href: '/admin/comments' },
+    { id: 'products', label: 'Quản lý sản phẩm', icon: Package, href: "/products" },
     { id: 'orders', label: 'Quản lý đơn hàng', icon: ShoppingCart },
     { id: 'categories', label: 'Quản lý danh mục', icon: FolderTree },
-    { id: 'promotions', label: 'Quản lý khuyến mãi', icon: Gift },
-    { id: 'customers', label: 'Quản lý khách hàng', icon: Users },
+    { id: 'promotions', label: 'Quản lý khuyến mãi', icon: Gift, href: '/admin/coupons' },
+    { id: 'customers', label: 'Quản lý khách hàng', icon: Users, href: '/admin/users' },
     { id: 'reports', label: 'Báo cáo', icon: FileText },
     { id: 'settings', label: 'Cài đặt', icon: Settings },
   ];
@@ -45,7 +46,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, activeMenu, onMenuClic
           return (
             <button
               key={item.id}
-              onClick={() => onMenuClick(item.id)}
+              onClick={() => {
+                onMenuClick(item.id);
+                if (item.href) {
+                  window.location.href = item.href;
+                }
+              }}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                 isActive ? 'bg-purple-50 text-purple-600' : 'text-gray-600 hover:bg-gray-50'
               }`}
@@ -59,3 +65,4 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, activeMenu, onMenuClic
     </aside>
   );
 };
+export default Sidebar;

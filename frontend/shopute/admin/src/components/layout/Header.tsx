@@ -1,6 +1,7 @@
 'use client';
 import React from 'react';
-import { Menu, Search, Globe, Sun, Maximize2, Bell } from 'lucide-react';
+import { Menu, Search, Globe, Sun, Maximize2 } from 'lucide-react';
+import { NotificationMenu } from '@/components/layout/NotificationMenu';
 
 interface HeaderProps {
   onToggleSidebar: () => void;
@@ -24,16 +25,13 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 relative">
           {[Globe, Sun, Maximize2].map((Icon, i) => (
             <button key={i} className="p-2 hover:bg-gray-100 rounded-lg">
               <Icon size={20} className="text-gray-600" />
             </button>
           ))}
-          <button className="p-2 hover:bg-gray-100 rounded-lg relative">
-            <Bell size={20} className="text-gray-600" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
-          </button>
+          <NotificationMenu />
           <div className="flex items-center gap-2 ml-2 cursor-pointer">
             <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full"></div>
             <span className="text-sm font-medium">Admin</span>

@@ -1,6 +1,6 @@
 import { ApiError } from '@/types/auth';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8089/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081/api';
 
 class ApiClient {
   private baseURL: string;
@@ -23,6 +23,12 @@ class ApiClient {
     options: RequestInit = {}
   ): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
+
+    // Lazy-restore access token from localStorage on first use (client-side)
+    if (!this.accessToken && typeof window !== 'undefined') {
+      const t = window.localStorage?.getItem?.('access_token');
+      if (t) this.setAccessToken(t);
+    }
     
     const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -37,9 +43,9 @@ class ApiClient {
       const response = await fetch(url, {
         ...options,
         headers,
-        credentials: 'include', // Để gửi cookie refresh_token
+        credentials: 'include', 
       });
-      // Nếu response không ok, parse error
+
       if (!response.ok) {
         const error: ApiError = await response.json().catch(() => ({
           statusCode: response.status,
@@ -48,14 +54,23 @@ class ApiClient {
         throw error;
       }
 
-      return response.json();
+      // Parse body safely: allow empty body (e.g. PATCH/204)
+      const contentType = response.headers.get('content-type') || '';
+      const text = await response.text();
+      if (!text) {
+        return undefined as T;
+      }
+      if (contentType.includes('application/json')) {
+        return JSON.parse(text) as T;
+      }
+      return text as unknown as T;
     } catch (error) {
       if ((error as ApiError).statusCode) {
         throw error;
       }
       throw {
         statusCode: 500,
-        message: 'Không thể kết nối đến server',
+        message: (error as Error).message || 'Network error',
       } as ApiError;
     }
   }
@@ -67,7 +82,7 @@ class ApiClient {
   async post<T>(endpoint: string, data?: any, options?: RequestInit): Promise<T> {
     return this.request<T>(endpoint, {
       ...options,
-      method: 'POST',
+      method: options?.method ?? 'POST',
       body: JSON.stringify(data),
     });
   }
@@ -76,6 +91,14 @@ class ApiClient {
     return this.request<T>(endpoint, {
       ...options,
       method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async patch<T>(endpoint: string, data?: any, options?: RequestInit): Promise<T> {
+    return this.request<T>(endpoint, {
+      ...options,
+      method: 'PATCH',
       body: JSON.stringify(data),
     });
   }

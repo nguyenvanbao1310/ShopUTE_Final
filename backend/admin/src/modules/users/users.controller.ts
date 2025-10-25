@@ -32,4 +32,9 @@ export class UsersController {
     }
     return this.usersService.search({ name, role, isActive });
   }
+
+  @Get('stats')
+  stats() {
+    return this.usersService.stats();
+  }
 }
