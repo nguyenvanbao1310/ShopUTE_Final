@@ -1,28 +1,17 @@
-export const uploadImage = async (file: File): Promise<string> => {
+export async function uploadImage(file: File): Promise<string> {
+  const API_BASE_URL =
+    process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8888";
+
   const formData = new FormData();
   formData.append("file", file);
-  formData.append(
-    "upload_preset",
-    process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!
-  );
 
-  const res = await fetch(process.env.NEXT_PUBLIC_CLOUDINARY_API_URL!, {
+  const res = await fetch(`${API_BASE_URL}/api/products/upload`, {
     method: "POST",
     body: formData,
   });
 
-  if (!res.ok) {
-    throw new Error("Upload ảnh thất bại");
-  }
-
+  if (!res.ok) throw new Error("❌ Upload image failed");
   const data = await res.json();
-  return data.secure_url as string; // ✅ URL ảnh public trên Cloudinary
-};
-
-export const uploadMultipleImages = async (
-  files: File[]
-): Promise<string[]> => {
-  const uploadPromises = files.map((file) => uploadImage(file));
-  const urls = await Promise.all(uploadPromises);
-  return urls;
-};
+  // data.url = "uploads/products/xxx.jpg"
+  return data.url;
+}
