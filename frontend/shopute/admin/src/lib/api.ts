@@ -45,7 +45,7 @@ class ApiClient {
         headers,
         credentials: 'include', 
       });
-      // Náº¿u response khÃ´ng ok, parse error
+
       if (!response.ok) {
         const error: ApiError = await response.json().catch(() => ({
           statusCode: response.status,

@@ -17,7 +17,7 @@ export function UserSearch({
 }) {
   return (
     <form onSubmit={onSearch} className="bg-white rounded-xl p-4 shadow-sm">
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
         <div className="md:col-span-2">
           <InputField
             label="Tìm theo tên hoặc email"
@@ -38,7 +38,7 @@ export function UserSearch({
             <option value="admin">Admin</option>
           </select>
         </div>
-        <div>
+        <div >
           <label className="block text-sm font-medium text-gray-700 mb-2">Trạng thái</label>
           <select
             value={filters.status}
@@ -49,15 +49,6 @@ export function UserSearch({
             <option value="active">Đang hoạt động</option>
             <option value="banned">Đã bị ban</option>
           </select>
-        </div>
-        <div className="flex items-end">
-          <button
-            type="submit"
-            className="w-full md:w-auto px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-            disabled={loading}
-          >
-            {loading ? 'Đang tìm...' : 'Tìm kiếm'}
-          </button>
         </div>
       </div>
     </form>

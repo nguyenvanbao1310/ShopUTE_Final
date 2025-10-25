@@ -70,8 +70,15 @@ export function useUsers() {
 
   useEffect(() => {
     fetchStats();
-    fetchUsers(filters);
   }, []);
+
+  // Auto-search when filters change (debounced)
+  useEffect(() => {
+    const handle = setTimeout(() => {
+      fetchUsers(filters);
+    }, 400);
+    return () => clearTimeout(handle);
+  }, [filters, fetchUsers]);
 
   const statCards = useMemo(
     () => ({

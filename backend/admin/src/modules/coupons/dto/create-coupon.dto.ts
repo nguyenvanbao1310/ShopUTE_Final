@@ -1,4 +1,4 @@
-import { IsBoolean, IsDate, IsEnum, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, Length, Min } from 'class-validator';
+import { IsBoolean, IsDateString, IsEnum, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, Length, Min } from 'class-validator';
 
 export class CreateCouponDto {
   @IsString()
@@ -27,14 +27,18 @@ export class CreateCouponDto {
   maxDiscountValue?: number | null;
 
   @IsOptional()
-  @IsDate()
+  @IsDateString()
   expiresAt?: Date | null;
+
+  @IsOptional()
+  @IsDateString()
+  createdAt?: Date | null;
 
   @IsOptional()
   @IsBoolean()
   isUsed?: boolean;
 
   @IsOptional()
-  @IsDate()
+  @IsDateString()
   usedAt?: Date | null;
 }
