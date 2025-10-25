@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
+import { ServeStaticModule } from '@nestjs/serve-static';
 import { ProductsModule } from './modules/products/product.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { CouponsModule } from './modules/coupons/coupons.module';
@@ -11,6 +12,7 @@ import { UsersModule } from './modules/users/users.module';
 import { JwtModule } from '@nestjs/jwt';
 import { AuthModule } from './modules/auth/auth.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { join } from 'path';
 @Module({
   imports: [
     ConfigModule.forRoot(),
@@ -37,7 +39,12 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
       signOptions: { expiresIn: '15m' },
     }),
     AuthModule,
-    AnalyticsModule
+    AnalyticsModule,
+    // ⚡ Serve đúng thư mục chứa ảnh
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'public', 'images'), // 👉 trỏ trực tiếp vào public/images
+      serveRoot: '/images', // truy cập qua /images/...
+    }),
   ],
 })
 export class AppModule {}

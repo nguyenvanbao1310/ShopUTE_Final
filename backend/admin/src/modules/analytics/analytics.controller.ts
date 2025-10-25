@@ -24,4 +24,17 @@ export class AnalyticsController {
   getTopProducts() {
     return this.analyticsService.getTopProducts();
   }
+  @Get('orders')
+    getTotalOrders() {
+    return this.analyticsService.getTotalOrders();
+    }
+    @Get('products')
+    getAvailableProducts() {
+    return this.analyticsService.getAvailableProducts();
+    }
+    @Get('sales-by-location')
+getSalesByLocation() {
+  return this.analyticsService.getSalesByLocation();
+}
+
 }
