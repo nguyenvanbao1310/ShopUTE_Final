@@ -8,8 +8,9 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { CommentsModule } from './modules/comments/comments.module';
 import { RepliesModule } from './modules/rating-replies/replies.module';
 import { UsersModule } from './modules/users/users.module';
+import { JwtModule } from '@nestjs/jwt';
+import { AuthModule } from './modules/auth/auth.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
-
 @Module({
   imports: [
     ConfigModule.forRoot(),
@@ -30,7 +31,13 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
     CommentsModule,
     RepliesModule,
     UsersModule,
-    AnalyticsModule,
+    JwtModule.register({
+      global: true,
+      secret: process.env.JWT_ACCESS_SECRET,
+      signOptions: { expiresIn: '15m' },
+    }),
+    AuthModule,
+    AnalyticsModule
   ],
 })
 export class AppModule {}

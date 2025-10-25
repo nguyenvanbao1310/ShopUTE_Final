@@ -10,7 +10,6 @@ import CategoryList from "./components/home/CategoryList";
 import CategoryPage from "./components/home/CategoryPage";
 import ProductDetail from "./components/home/ProductDetail";
 import CartPage from "./pages/Cart";
-
 import AccountLayout from "./pages/account/AccountLayout";
 import Profile from "./pages/account/Profile";
 import Address from "./pages/account/Address";
@@ -20,8 +19,44 @@ import OrderList from "./components/OrderList";
 import WishlistPage from "./pages/wishlist/WishlistPage";
 import ViewedProductsPage from "./pages/viewedProduct/ViewedProductsPage";
 import CheckoutComplete from "./pages/CheckOut/CheckoutComplete"
+import { useSelector } from "react-redux";
+import { RootState } from "./store/store";
+import { useWebSocket } from "./hooks/useWebSocket";
+import { toast, ToastContainer } from "react-toastify";
+import { createContext, useContext, useState, useCallback } from "react";
+
+const NotificationContext = createContext<{
+  notifications: any[];
+  addNotification: (notif: any) => void;
+}>({ notifications: [], addNotification: () => {} });
+
+export const useNotifications = () => useContext(NotificationContext);
+function WebSocketManager({ addNotification }: { addNotification: (notif: any) => void }) {
+  const { user, isAuthenticated } = useSelector((state: RootState) => state.auth);
+
+  const handleWsMessage = useCallback(
+    (data: any) => {
+      if (data.event === "NEW_NOTIFICATION") {
+        toast.info(`${data.data.title}: ${data.data.message}`);
+        addNotification(data.data);
+      }
+    },
+    [addNotification]
+  );
+
+  useWebSocket(isAuthenticated ? user?.id ?? null : null, handleWsMessage);
+  return null; // không render gì
+}
+
+
 function App() {
+  const [notifications, setNotifications] = useState<any[]>([]);
+
+  const addNotification = useCallback((notif: any) => {
+    setNotifications((prev) => [notif, ...prev]);
+  }, []);
   return (
+    <NotificationContext.Provider value={{ notifications, addNotification }}>
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
@@ -46,6 +81,9 @@ function App() {
         <Route path="/cart" element={<CartPage />} />
       </Routes>
     </BrowserRouter>
+    <WebSocketManager addNotification={addNotification} />
+    <ToastContainer position="top-right" autoClose={3000} />
+    </NotificationContext.Provider>
   );
 }
 export default App;
