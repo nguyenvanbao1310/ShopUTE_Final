@@ -363,7 +363,7 @@ export async function getAllProductsSvc(
       row.getDataValue("discountPercent") !== undefined
         ? parseFloat(row.getDataValue("discountPercent"))
         : 0,
-    averageRating: 0,
+    averageRating: parseFloat(row.getDataValue("averageRating")) || 0,
   }));
 
   return {

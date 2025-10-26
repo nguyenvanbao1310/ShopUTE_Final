@@ -5,16 +5,19 @@ import Layout from "../../layouts/MainLayout";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "../../store/store";
 import { addToCart } from "../../store/cartSlice";
+import Fuse from "fuse.js";
 
 import {
   fetchAllProducts,
   fetchProductsByCategory,
   fetchProductsByCategories,
-  fetchAllBrands ,
+  fetchAllBrands,
 } from "../../apis/productApi";
 import axios from "axios";
 
-// Kiểu dữ liệu
+// ===============================
+// 🔹 Interfaces
+// ===============================
 interface Category {
   id: number;
   name: string;
@@ -41,23 +44,22 @@ interface PaginationInfo {
   hasPrev: boolean;
 }
 
-
+// ===============================
+// 🔹 Component
+// ===============================
 const CategoryPage: FC = () => {
   const dispatch = useDispatch<AppDispatch>();
-const handleAddToCart = (productId: number) => {
-  dispatch(addToCart({ productId, quantity: 1 }));
-};
-const [brands, setBrands] = useState<string[]>([]);
-
   const { categoryName = "" } = useParams<{ categoryName: string }>();
 
-  // State chính
+  // ============ State ============
   const [categories, setCategories] = useState<Category[]>([]);
+  const [brands, setBrands] = useState<string[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>(
     categoryName ? [categoryName] : []
   );
+  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [showAll, setShowAll] = useState(false);
   const [sortOption, setSortOption] = useState("default");
   const [viewMode, setViewMode] = useState("grid");
@@ -70,7 +72,9 @@ const [brands, setBrands] = useState<string[]>([]);
     hasPrev: false,
   });
 
-  // =============== Fetch API ===============
+  // ============ Fetch ============
+
+  // Load sản phẩm
   const loadProducts = async (page = 1) => {
     try {
       setLoading(true);
@@ -79,9 +83,19 @@ const [brands, setBrands] = useState<string[]>([]);
       if (showAll) {
         data = await fetchAllProducts(page, 12, selectedBrands);
       } else if (selectedCategories.length > 1) {
-        data = await fetchProductsByCategories(selectedCategories, page, 12, selectedBrands);
+        data = await fetchProductsByCategories(
+          selectedCategories,
+          page,
+          12,
+          selectedBrands
+        );
       } else if (selectedCategories.length === 1) {
-        data = await fetchProductsByCategory(selectedCategories[0], page, 12, selectedBrands);
+        data = await fetchProductsByCategory(
+          selectedCategories[0],
+          page,
+          12,
+          selectedBrands
+        );
       } else {
         data = await fetchAllProducts(page, 12, selectedBrands);
       }
@@ -96,7 +110,7 @@ const [brands, setBrands] = useState<string[]>([]);
     }
   };
 
-  // Lấy danh mục khi vào trang
+  // Lấy danh mục
   useEffect(() => {
     axios
       .get("http://localhost:8088/api/categories/all")
@@ -104,42 +118,42 @@ const [brands, setBrands] = useState<string[]>([]);
       .catch((err) => console.error("❌ Lỗi lấy danh mục:", err));
   }, []);
 
-  // Khi category hoặc brand thay đổi → tải lại sản phẩm
+  // Lấy thương hiệu
+  useEffect(() => {
+    const fetchBrandsData = async () => {
+      try {
+        const data = await fetchAllBrands();
+        setBrands(data);
+      } catch (err) {
+        console.error("❌ Lỗi lấy thương hiệu:", err);
+      }
+    };
+    fetchBrandsData();
+  }, []);
+
+  // Reload khi chọn category / brand
   useEffect(() => {
     loadProducts(1);
   }, [selectedCategories, selectedBrands, showAll]);
-  useEffect(() => {
-  const fetchBrands = async () => {
-    try {
-      const data = await fetchAllBrands();
-      setBrands(data);
-    } catch (err) {
-      console.error("❌ Lỗi lấy thương hiệu:", err);
-    }
+
+  // ============ Handlers ============
+  const handleAddToCart = (productId: number) => {
+    dispatch(addToCart({ productId, quantity: 1 }));
   };
 
-  fetchBrands();
-}, []);
-
-
-  // =============== Handler ===============
   const handleCategoryChange = (catName: string) => {
     let updated = [...selectedCategories];
-    if (updated.includes(catName)) {
-      updated = updated.filter((c) => c !== catName);
-    } else {
-      updated.push(catName);
-    }
+    updated = updated.includes(catName)
+      ? updated.filter((c) => c !== catName)
+      : [...updated, catName];
     setSelectedCategories(updated);
   };
 
   const handleBrandChange = (brand: string) => {
     let updated = [...selectedBrands];
-    if (updated.includes(brand)) {
-      updated = updated.filter((b) => b !== brand);
-    } else {
-      updated.push(brand);
-    }
+    updated = updated.includes(brand)
+      ? updated.filter((b) => b !== brand)
+      : [...updated, brand];
     setSelectedBrands(updated);
   };
 
@@ -154,8 +168,19 @@ const [brands, setBrands] = useState<string[]>([]);
     setShowAll(!showAll);
   };
 
-  // =============== Sorting ===============
-  const sortedProducts = [...products].sort((a, b) => {
+  // ============ Fuzzy Search ============
+  const fuse = new Fuse(products, {
+    keys: ["name", "brand"],
+    threshold: 0.3,
+  });
+
+  const filteredProducts =
+    searchTerm.trim() === ""
+      ? products
+      : fuse.search(searchTerm).map((res) => res.item);
+
+  // ============ Sorting ============
+  const sortedProducts = [...filteredProducts].sort((a, b) => {
     if (sortOption === "name-asc") return a.name.localeCompare(b.name);
     if (sortOption === "name-desc") return b.name.localeCompare(a.name);
     if (sortOption === "price-asc") return a.finalPrice - b.finalPrice;
@@ -163,7 +188,7 @@ const [brands, setBrands] = useState<string[]>([]);
     return 0;
   });
 
-  // =============== UI Render ===============
+  // ============ UI ============
   const displayTitle =
     showAll || selectedCategories.length === 0
       ? "Tất cả sản phẩm"
@@ -198,9 +223,22 @@ const [brands, setBrands] = useState<string[]>([]);
             )}
           </h1>
 
-          <div className="flex justify-center items-center gap-6 mt-4">
+          {/* Ô tìm kiếm + Sắp xếp + View Mode */}
+          <div className="flex justify-center items-center gap-6 mt-4 flex-wrap">
+            <div className="flex items-center bg-white border border-gray-300 rounded-lg overflow-hidden shadow-sm">
+              <input
+                type="text"
+                placeholder="🔍 Tìm sản phẩm..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="p-2 w-64 outline-none"
+              />
+            </div>
+
             <div className="flex items-center">
-              <span className="mr-3 text-gray-600 font-medium">Sắp xếp theo:</span>
+              <span className="mr-3 text-gray-600 font-medium">
+                Sắp xếp theo:
+              </span>
               <select
                 value={sortOption}
                 onChange={(e) => setSortOption(e.target.value)}
@@ -218,7 +256,9 @@ const [brands, setBrands] = useState<string[]>([]);
               <button
                 onClick={() => setViewMode("grid")}
                 className={`p-2 rounded-lg ${
-                  viewMode === "grid" ? "bg-blue-600 text-white" : "bg-gray-200"
+                  viewMode === "grid"
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-200 text-gray-700"
                 }`}
               >
                 <Grid size={18} />
@@ -226,7 +266,9 @@ const [brands, setBrands] = useState<string[]>([]);
               <button
                 onClick={() => setViewMode("list")}
                 className={`p-2 rounded-lg ${
-                  viewMode === "list" ? "bg-blue-600 text-white" : "bg-gray-200"
+                  viewMode === "list"
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-200 text-gray-700"
                 }`}
               >
                 <List size={18} />
@@ -269,24 +311,23 @@ const [brands, setBrands] = useState<string[]>([]);
 
             <h3 className="font-bold mt-6 mb-4">Thương hiệu</h3>
             <ul className="space-y-2">
-  {brands.map((brand) => (
-    <li key={brand}>
-      <label className="flex items-center">
-        <input
-          type="checkbox"
-          className="mr-2"
-          checked={selectedBrands.includes(brand)}
-          onChange={() => handleBrandChange(brand)}
-        />
-        {brand}
-      </label>
-    </li>
-  ))}
-</ul>
-
+              {brands.map((brand) => (
+                <li key={brand}>
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      className="mr-2"
+                      checked={selectedBrands.includes(brand)}
+                      onChange={() => handleBrandChange(brand)}
+                    />
+                    {brand}
+                  </label>
+                </li>
+              ))}
+            </ul>
           </aside>
 
-          {/* Sản phẩm */}
+          {/* Danh sách sản phẩm */}
           <main className="col-span-3">
             {sortedProducts.length === 0 && !loading ? (
               <p className="text-center py-10 text-gray-500">
@@ -318,7 +359,11 @@ const [brands, setBrands] = useState<string[]>([]);
                         />
                       </Link>
 
-                      <div className={viewMode === "list" ? "ml-4 flex-1 p-2" : "p-4"}>
+                      <div
+                        className={
+                          viewMode === "list" ? "ml-4 flex-1 p-2" : "p-4"
+                        }
+                      >
                         <Link to={`/product/${product.id}`}>
                           <h3 className="font-semibold">{product.name}</h3>
                         </Link>
@@ -349,11 +394,11 @@ const [brands, setBrands] = useState<string[]>([]);
                           </span>
                         </div>
                         <button
-  className="mt-3 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-  onClick={() => handleAddToCart(product.id)}
->
-  🛒 Thêm vào giỏ
-</button>
+                          className="mt-3 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                          onClick={() => handleAddToCart(product.id)}
+                        >
+                          🛒 Thêm vào giỏ
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -364,7 +409,9 @@ const [brands, setBrands] = useState<string[]>([]);
                   <div className="mt-8 flex justify-center">
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={() => handlePageChange(pagination.currentPage - 1)}
+                        onClick={() =>
+                          handlePageChange(pagination.currentPage - 1)
+                        }
                         disabled={!pagination.hasPrev}
                         className={`px-3 py-2 border rounded ${
                           pagination.hasPrev
@@ -393,7 +440,9 @@ const [brands, setBrands] = useState<string[]>([]);
                       ))}
 
                       <button
-                        onClick={() => handlePageChange(pagination.currentPage + 1)}
+                        onClick={() =>
+                          handlePageChange(pagination.currentPage + 1)
+                        }
                         disabled={!pagination.hasNext}
                         className={`px-3 py-2 border rounded ${
                           pagination.hasNext
