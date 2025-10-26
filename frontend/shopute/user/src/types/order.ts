@@ -26,11 +26,44 @@ export interface Order {
     | "CANCEL_REQUESTED";
   paymentMethod: string;
   paymentStatus: "UNPAID" | "PAID" | "REFUNDED";
-  totalAmount: number; // <-- đổi từ string -> number
+  // 💰 Các trường tiền tệ được parse về number
+  totalAmount: number;
+  discountAmount?: number | null;
+  shippingFee?: number | null;
+  finalAmount?: number | null;
   deliveryAddress: string;
+  note?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  usedPoints?: number | null;
+  pointsDiscountAmount?: number | null;
+
+  // ✅ Liên kết
   OrderDetails: OrderDetail[];
-  createdAt: string; // <-- thêm
-  updatedAt: string; // <-- thêm
+  coupon?: Coupon | null;
+  shippingMethod?: ShippingMethod | null;
+}
+
+// ========================
+// 🎟 Coupon (Voucher)
+// ========================
+export interface Coupon {
+  id: number;
+  code: string;
+  type: "PERCENT" | "AMOUNT";
+  value: number; // parse từ string
+  maxDiscountValue?: number | null;
+  expiresAt?: string | null;
+}
+
+// ========================
+// 🚚 Shipping Method
+// ========================
+export interface ShippingMethod {
+  id: number;
+  name: string;
+  fee: number; // parse từ string
+  estimatedDays?: string | null;
 }
 export interface CancelOrderResponse {
   type: "cancelled" | "request";
