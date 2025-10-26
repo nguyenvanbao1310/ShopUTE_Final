@@ -32,9 +32,20 @@ export type ProductImage = {
 
 export const productApi = {
   // Lấy tất cả sản phẩm
-  async getAll(): Promise<Product[]> {
-    const data = await apiClient.get<Product[]>("/products");
-    return data.map((p) => ({ ...p, price: Number(p.price) }));
+  getAll: async (page = 1, limit = 7, search = "", sortBy = "Newest") => {
+    const query = new URLSearchParams({
+      page: String(page),
+      limit: String(limit),
+      search,
+      sortBy,
+    });
+
+    return apiClient.get<{
+      data: Product[];
+      total: number;
+      page: number;
+      totalPages: number;
+    }>(`/products?${query.toString()}`);
   },
 
   // Lấy sản phẩm theo id
@@ -64,5 +75,20 @@ export const productApi = {
 
   async deleteImage(imageId: number) {
     return apiClient.delete(`/product-images/${imageId}`);
+  },
+
+  // Xuất danh sách sản phẩm ra file CSV
+  // Xuất danh sách sản phẩm ra file CSV
+  async exportCSV() {
+    const blob = await apiClient.getBlob("/products/export/csv");
+
+    // ✅ Tạo link tải file
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "products.csv";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
   },
 };

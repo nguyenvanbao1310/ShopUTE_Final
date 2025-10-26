@@ -11,8 +11,19 @@ async function bootstrap() {
   app.use(cookieParser());
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
-  app.useStaticAssets(join(__dirname, '..', 'uploads', 'products'), {
+  app.useStaticAssets(join(process.cwd(), 'uploads', 'products'), {
     prefix: '/uploads/products/',
+    setHeaders: (res) => {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+    },
+  });
+
+  // Serve ảnh avatar
+  app.useStaticAssets(join(process.cwd(), 'uploads', 'avatar'), {
+    prefix: '/uploads/avatar/',
+    setHeaders: (res) => {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+    },
   });
   // Enable CORS for frontend origin
   app.enableCors({
