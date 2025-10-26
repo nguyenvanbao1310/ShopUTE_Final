@@ -24,7 +24,7 @@ export class RepliesController {
     const adminUserId: number | null = typeof req.user?.sub === 'number' ? (req.user!.sub as number) : null;
     return this.repliesService.create(ratingId, adminUserId, dto.message);
   }
-
+  
   @UseGuards(AdminGuard)
   @Delete('replies/:id')
   remove(@Param('id', ParseIntPipe) id: number) {

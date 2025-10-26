@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
-
+import AdminProtectedRoute from '@/components/auth/AdminProtectedRoute';
 export default function AdminLayout({
   children,
 }: {
@@ -13,6 +13,7 @@ export default function AdminLayout({
   const [activeMenu, setActiveMenu] = useState('dashboard');
 
   return (
+    <AdminProtectedRoute>
     <div className="flex h-screen bg-gray-50">
       <Sidebar
         isOpen={sidebarOpen}
@@ -24,5 +25,6 @@ export default function AdminLayout({
         <main className="flex-1 overflow-y-auto p-6">{children}</main>
       </div>
     </div>
+    </AdminProtectedRoute>
   );
 }

@@ -11,11 +11,22 @@ async function bootstrap() {
   app.use(cookieParser());
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
-  app.useStaticAssets(join(__dirname, '..', 'uploads', 'products'), {
+  app.useStaticAssets(join(process.cwd(), 'uploads', 'products'), {
     prefix: '/uploads/products/',
+    setHeaders: (res) => {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+    },
   });
 
-  const corsOrigins = (process.env.FRONTEND_ORIGIN || 'http://localhost:3001')
+  // Serve ảnh avatar
+  app.useStaticAssets(join(process.cwd(), 'uploads', 'avatar'), {
+    prefix: '/uploads/avatar/',
+    setHeaders: (res) => {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+    },
+  });
+
+  const corsOrigins = (process.env.FRONTEND_ORIGIN || 'http://localhost:3001,http://localhost:3000')
     .split(',')
     .map((s) => s.trim())
     .filter(Boolean);

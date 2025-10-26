@@ -1,4 +1,4 @@
-import { Transaction } from "sequelize";
+import { Model, Transaction } from "sequelize";
 import sequelize from "../config/configdb";
 import Order from "../models/Order";
 import OrderDetail from "../models/OrderDetail";
@@ -142,6 +142,23 @@ export async function createOrder(data: CreateOrderInput) {
     }));
 
     await OrderDetail.bulkCreate(details, { transaction: t });
+    for (const item of data.items) {
+      const product = await Product.findByPk(item.productId, { transaction: t });
+      if (!product) {
+        throw new Error(`Không tìm thấy sản phẩm ID ${item.productId}`);
+      }
+
+      // Nếu sản phẩm không đủ tồn kho
+      if (product.stock < item.quantity) {
+        throw new Error(`Sản phẩm ${product.name} không đủ số lượng trong kho.`);
+      }
+
+      // Cập nhật tồn kho
+      await product.update(
+        { stock: product.stock - item.quantity },
+        { transaction: t }
+      );
+    }
     await t.commit();
     if (data.userId) {
       const user = await User.findByPk(data.userId);
@@ -152,7 +169,7 @@ export async function createOrder(data: CreateOrderInput) {
         type: "ORDER",
         title: "🛍️ Đơn hàng mới tạo",
         message: `Bạn vừa đặt đơn hàng #${order.code} thành công.`,
-        actionUrl: `/orders/${order.id}`,
+        actionUrl: `/orders`,
         sendEmail: true,
       } as CreateNotificationParams;
 
@@ -161,7 +178,7 @@ export async function createOrder(data: CreateOrderInput) {
         type: "ORDER",
         title: "🧾 Đơn hàng mới",
         message: `${user?.firstName || "Khách hàng"} ${user?.lastName || ""} vừa đặt đơn hàng #${order.code}.`,
-        actionUrl: `/admin/orders/${order.id}`,
+        actionUrl: `/admin/orders`,
         sendEmail: true,
       } as CreateNotificationParams;
 
@@ -334,9 +351,32 @@ export async function getUserOrders(userId: number) {
           },
         ],
       },
+      { model: Coupon, as: "coupon" },
+      { model: ShippingMethod, as: "shippingMethod" },
     ],
     order: [["createdAt", "DESC"]],
   });
 
   return orders;
+}
+
+export async function getOrderById(orderId: number) {
+  const order = await Order.findByPk(orderId, {
+    include: [
+      {
+        
+        model: OrderDetail, 
+        as: "OrderDetails",
+        include: [
+          {
+            model: Product,
+            as: "Product", // alias đúng trong association
+          },  
+        ],
+      },
+      { model: Coupon, as: "coupon" },
+      { model: ShippingMethod, as: "shippingMethod" },
+    ],
+  });
+  return order;
 }

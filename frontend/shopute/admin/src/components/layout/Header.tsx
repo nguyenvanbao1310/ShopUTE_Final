@@ -2,6 +2,7 @@
 import React from 'react';
 import { Menu, Search, Globe, Sun, Maximize2 } from 'lucide-react';
 import { NotificationMenu } from '@/components/layout/NotificationMenu';
+import { UserMenu } from '../auth/UserMenu';
 
 interface HeaderProps {
   onToggleSidebar: () => void;
@@ -32,10 +33,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
             </button>
           ))}
           <NotificationMenu />
-          <div className="flex items-center gap-2 ml-2 cursor-pointer">
-            <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full"></div>
-            <span className="text-sm font-medium">Admin</span>
-          </div>
+          <UserMenu />
         </div>
       </div>
     </header>

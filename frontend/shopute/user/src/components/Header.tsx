@@ -95,7 +95,7 @@ const Header = () => {
       </div>
 
       {/* Menu dưới trùng biên với thanh search */}
-      <div className="max-w-7xl mx-auto px-4">
+      {/* <div className="max-w-7xl mx-auto px-4">
         <div className="flex flex-wrap justify-center gap-6 py-4 text-gray-700 text-base ">
           <button className="hover:text-green-600">Categories</button>
           <button className="hover:text-green-600">Special</button>
@@ -106,7 +106,7 @@ const Header = () => {
           <button className="hover:text-green-600">Information</button>
           <button className="hover:text-green-600">Admin</button>
         </div>
-      </div>
+      </div> */}
     </header>
   );
 };

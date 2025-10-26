@@ -9,7 +9,7 @@ import {
   WhereOptions,
 } from "sequelize";
 import sequelize from "../config/configdb";
-
+import {  Sequelize } from "sequelize";
 import ProductModel from "../models/Product";
 import CategoryModel from "../models/Category";
 import OrderDetailModel from "../models/OrderDetail";
@@ -377,6 +377,116 @@ export async function getAllProductsSvc(
     },
   };
 }
+export async function getProductsByCategoryNamesSvc(
+  categoryNames: string[],
+  page: number = 1,
+  limit: number = 12,
+  brands?: string[]
+) {
+  const offset = (page - 1) * limit;
+
+  // Normalize category names
+  const lowerNames = categoryNames.map((n) => n.trim().toLowerCase());
+
+  let productWhere: WhereOptions = { status: "ACTIVE" };
+  if (brands && brands.length > 0) {
+    productWhere = { ...productWhere, brand: { [Op.in]: brands } };
+  }
+
+  const result = await Product.findAndCountAll({
+    where: productWhere,
+    include: [
+      {
+        model: Category,
+        as: "Category",
+        attributes: ["id", "name", "parentId"],
+        required: true,
+        where: {
+          name: {
+            [Op.in]: lowerNames, // ✅ lọc theo nhiều category
+          },
+        },
+      },
+      {
+        model: ProductDiscount,
+        as: "discount",
+        attributes: ["isActive", "startsAt", "endsAt", "discountPercent"],
+        required: false,
+      },
+      {
+        model: ProductImage,
+        as: "Images",
+        attributes: ["id", "url", "position", "createdAt", "updatedAt"],
+        required: false,
+      },
+      {
+        model: Rating,
+        as: "Ratings",
+        attributes: [],
+        required: false,
+      },
+    ],
+    attributes: {
+      include: [
+        [fn("COALESCE", fn("AVG", col("Ratings.rating")), 0), "averageRating"],
+        ...baseAttrs,
+      ],
+    },
+    group: ["Product.id"],
+    order: [["createdAt", "DESC"]],
+    limit,
+    offset,
+    distinct: true,
+    subQuery: false,
+  });
+
+  const totalProducts = result.count.length || result.count;
+  const totalPages = Math.ceil(totalProducts / limit);
+  const products = result.rows.map((row: any) => ({
+    ...row.toJSON(),
+    price: parseFloat(row.getDataValue("price")),
+    finalPrice:
+      row.getDataValue("finalPrice") !== undefined
+        ? parseFloat(row.getDataValue("finalPrice"))
+        : parseFloat(row.getDataValue("price")),
+    discountPercent:
+      row.getDataValue("discountPercent") !== undefined
+        ? parseFloat(row.getDataValue("discountPercent"))
+        : 0,
+    averageRating: parseFloat(row.getDataValue("averageRating")) || 0,
+  }));
+
+  return {
+    products,
+    pagination: {
+      currentPage: page,
+      totalPages,
+      totalProducts,
+      hasNext: page < totalPages,
+      hasPrev: page > 1,
+    },
+  };
+}
+export async function getAllBrandsSvc() {
+  try {
+    const brands = await Product.findAll({
+      attributes: [
+        [Sequelize.fn("DISTINCT", Sequelize.col("brand")), "brand"]
+      ],
+      order: [[Sequelize.col("brand"), "ASC"]],
+      raw: true,
+    });
+
+    // Trả về danh sách thương hiệu dạng string[]
+    return brands
+  .map((b: any) => b.brand)
+  .filter((brand: string) => typeof brand === "string" && brand.trim() !== "");
+
+  } catch (error) {
+    console.error("❌ Lỗi trong getAllBrandsSvc:", error);
+    throw { status: 500, message: "Không thể lấy danh sách thương hiệu" };
+  }
+}
 export async function getProductsByCategoryNameSvc(
   categoryName: string,
   page: number = 1,
@@ -486,5 +596,6 @@ export async function getProductsByCategoryNameSvc(
       hasPrev: page > 1,
     },
   };
+  
 }
 

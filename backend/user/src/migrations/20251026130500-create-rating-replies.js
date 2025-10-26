@@ -10,14 +10,14 @@ module.exports = {
         primaryKey: true,
       },
       ratingId: {
-        type: Sequelize.INTEGER.UNSIGNED,
+        type: Sequelize.INTEGER,
         allowNull: false,
         references: { model: "ratings", key: "id" },
         onUpdate: "CASCADE",
         onDelete: "CASCADE",
       },
       adminUserId: {
-        type: Sequelize.INTEGER.UNSIGNED,
+        type: Sequelize.INTEGER,
         allowNull: true,
         references: { model: "Users", key: "id" },
         onUpdate: "SET NULL",

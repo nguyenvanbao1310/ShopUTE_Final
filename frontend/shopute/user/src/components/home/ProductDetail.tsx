@@ -63,8 +63,6 @@ const ProductDetail: FC = () => {
   const [loading, setLoading] = useState(true);
   const [ratingsLoading, setRatingsLoading] = useState(true);
   const [selectedColor, setSelectedColor] = useState("");
-  const [selectedShipping, setSelectedShipping] = useState("");
-  const [selectedPayment, setSelectedPayment] = useState("");
   const [isFavorite, setIsFavorite] = useState(false);
   const [myRating, setMyRating] = useState<number>(0);
   const [myComment, setMyComment] = useState<string>("");
@@ -181,16 +179,7 @@ const ProductDetail: FC = () => {
       ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length
       : 0;
   const colors = ["Black", "Silver", "Gold"];
-  const shippingOptions = [
-    { id: "standard", name: "Standard Shipping (3-5 days)", price: 5.99 },
-    { id: "express", name: "Express Shipping (2-3 days)", price: 12.99 },
-    { id: "free", name: "Free Shipping (5-7 days)", price: 0 },
-  ];
-  const paymentOptions = [
-    { id: "credit", name: "Credit Card" },
-    { id: "paypal", name: "PayPal" },
-    { id: "bank", name: "Bank Transfer" },
-  ];
+ 
 
   return (
     <MainLayout>
@@ -447,48 +436,7 @@ const ProductDetail: FC = () => {
                   </div>
                 </div>
 
-                <div className="space-y-6">
-                  <div className="border-t border-gray-200 pt-6">
-                    <div className="flex items-center mb-3">
-                      <Truck size={20} className="text-gray-600 mr-2" />
-                      <h3 className="font-semibold text-lg">Shipping</h3>
-                    </div>
-                    <select
-                      value={selectedShipping}
-                      onChange={(e) => setSelectedShipping(e.target.value)}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      <option value="">Select shipping method</option>
-                      {shippingOptions.map((option) => (
-                        <option key={option.id} value={option.id}>
-                          {option.name}{" "}
-                          {option.price > 0
-                            ? `- $${option.price.toFixed(2)}`
-                            : ""}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="border-t border-gray-200 pt-6">
-                    <div className="flex items-center mb-3">
-                      <CreditCard size={20} className="text-gray-600 mr-2" />
-                      <h3 className="font-semibold text-lg">Payment</h3>
-                    </div>
-                    <select
-                      value={selectedPayment}
-                      onChange={(e) => setSelectedPayment(e.target.value)}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      <option value="">Select payment method</option>
-                      {paymentOptions.map((option) => (
-                        <option key={option.id} value={option.id}>
-                          {option.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
+                
 
                 <div className="border-t border-gray-200 pt-6">
                   <div className="flex items-center justify-between">
