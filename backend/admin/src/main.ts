@@ -15,7 +15,7 @@ async function bootstrap() {
     prefix: '/uploads/products/',
   });
 
-  const corsOrigins = (process.env.FRONTEND_ORIGIN || 'http://localhost:3001')
+  const corsOrigins = (process.env.FRONTEND_ORIGIN || 'http://localhost:3001', "http://localhost:3000")
     .split(',')
     .map((s) => s.trim())
     .filter(Boolean);
