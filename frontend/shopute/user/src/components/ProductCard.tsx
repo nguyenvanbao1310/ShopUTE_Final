@@ -73,8 +73,8 @@ const ProductCard: FC<ProductCardProps> = ({
         alt={name}
         className="w-full h-40 object-contain rounded"
       />
-      <h3 className="mt-2 font-semibold text-gray-800">{name}</h3>
-      <p className="text-pink-600 font-bold">{formatPrice(Number(price))}</p>
+      <h3 className="mt-2 font-semibold text-gray-800 text-center">{name}</h3>
+      <p className="text-pink-600 font-bold text-center">{formatPrice(Number(price))}</p>
       <button
         className="mt-2 w-full bg-pink-500 text-white py-2 rounded hover:bg-pink-600"
         onClick={() => dispatch(addToCart({ productId: id, quantity: 1 }))}
