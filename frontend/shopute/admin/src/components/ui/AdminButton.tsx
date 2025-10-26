@@ -5,6 +5,7 @@ import { cn } from "@/lib/util"; // hoặc tự định nghĩa nhỏ gọn
 interface AdminButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary";
+  size?: "sm" | "md" | "lg";
 }
 
 export const AdminButton: React.FC<AdminButtonProps> = ({

@@ -1,11 +1,13 @@
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, ILike } from 'typeorm';
 import { Product } from './entities/product.entity';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { ProductImage } from './entities/product-image.entity';
 import * as fs from 'fs';
 import * as path from 'path';
+import { Parser } from 'json2csv';
+import dayjs from 'dayjs';
 
 import { Injectable, NotFoundException } from '@nestjs/common';
 
@@ -19,8 +21,89 @@ export class ProductsService {
     private productImageRepository: Repository<ProductImage>,
   ) {}
 
-  findAll() {
-    return this.productRepo.find();
+  async exportToCSV(): Promise<Buffer> {
+    const products = await this.productRepo.find({});
+
+    // Chọn các trường cần export
+    const fields = [
+      { label: 'ID', value: 'id' },
+      { label: 'Tên sản phẩm', value: 'name' },
+      { label: 'Thương hiệu', value: 'brand' },
+      { label: 'Giá', value: 'price' },
+      { label: 'Tồn kho', value: 'stock' },
+      { label: 'Lượt xem', value: 'viewCount' },
+      { label: 'Trạng thái', value: 'status' },
+      {
+        label: 'Ngày tạo',
+        value: (row) => dayjs(row.createdAt).format('DD/MM/YYYY, HH:mm:ss'),
+      },
+    ];
+
+    const parser = new Parser({ fields });
+    const csv = parser.parse(products);
+
+    return Buffer.from('\uFEFF' + csv, 'utf-8'); // giữ ký tự tiếng Việt
+  }
+
+  async findAll(
+    page: number,
+    limit: number,
+    search: string,
+    sortBy: string = 'Newest',
+  ): Promise<{
+    data: Product[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    const skip = (page - 1) * limit;
+
+    const where = search
+      ? [
+          { name: ILike(`%${search}%`) },
+          { brand: ILike(`%${search}%`) },
+          { description: ILike(`%${search}%`) },
+        ]
+      : {};
+
+    // ✅ Xử lý sắp xếp
+    let order: Record<string, 'ASC' | 'DESC'> = { id: 'ASC' };
+
+    switch (sortBy) {
+      case 'Newest':
+        order = { createdAt: 'DESC' };
+        break;
+      case 'Oldest':
+        order = { createdAt: 'ASC' };
+        break;
+      case 'Price: High to Low':
+        order = { price: 'DESC' };
+        break;
+      case 'Price: Low to High':
+        order = { price: 'ASC' };
+        break;
+      case 'Top Viewed':
+        order = { viewCount: 'DESC' };
+        break;
+      default:
+        order = { id: 'ASC' };
+    }
+
+    const [data, total] = await this.productRepo.findAndCount({
+      where,
+      skip,
+      take: limit,
+      order,
+    });
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
   findOne(id: number) {
