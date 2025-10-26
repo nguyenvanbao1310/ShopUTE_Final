@@ -152,7 +152,7 @@ export async function createOrder(data: CreateOrderInput) {
         type: "ORDER",
         title: "🛍️ Đơn hàng mới tạo",
         message: `Bạn vừa đặt đơn hàng #${order.code} thành công.`,
-        actionUrl: `/orders/${order.id}`,
+        actionUrl: `/orders`,
         sendEmail: true,
       } as CreateNotificationParams;
 
@@ -161,7 +161,7 @@ export async function createOrder(data: CreateOrderInput) {
         type: "ORDER",
         title: "🧾 Đơn hàng mới",
         message: `${user?.firstName || "Khách hàng"} ${user?.lastName || ""} vừa đặt đơn hàng #${order.code}.`,
-        actionUrl: `/admin/orders/${order.id}`,
+        actionUrl: `/admin/orders`,
         sendEmail: true,
       } as CreateNotificationParams;
 
