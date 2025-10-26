@@ -12,7 +12,10 @@ export type CashFlowData = {
   completed: number;
   total: number;
 };
-
+export type ForecastResponse = {
+  history: { month: string; revenue: number }[];
+  forecast: { ds: string; yhat: number }[];
+};
 export type TopProduct = {
   id: number;
   name: string;
@@ -45,5 +48,8 @@ export const analyticsApi = {
   },
    async getSalesByLocation(): Promise<LocationSales[]> {
     return apiClient.get<LocationSales[]>("/analytics/sales-by-location");
+  },
+  async getForecast(): Promise<ForecastResponse> {
+    return apiClient.get<ForecastResponse>("/analytics/forecast");
   },
 };
