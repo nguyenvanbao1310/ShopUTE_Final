@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { Heart } from "lucide-react";
 import { wishlistApi } from "../apis/wishlistApi";
 
+const IMAGE_BASE_URL = process.env.REACT_APP_API_IMAGE_URL;
+
 interface ProductProps {
   id: number;
   name: string;
@@ -62,7 +64,7 @@ const ProductMostViewCard: FC<{ product: ProductProps }> = ({ product }) => {
       </button>
       <Link to={`/product/${product.id}`}>
         <img
-          src={product.thumbnailUrl}
+          src={`${IMAGE_BASE_URL}/${product.thumbnailUrl}`}
           alt={product.name}
           className="w-16 h-16 object-contain"
         />

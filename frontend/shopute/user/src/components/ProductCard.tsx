@@ -5,6 +5,8 @@ import { addToCart } from "../store/cartSlice";
 import { wishlistApi } from "../apis/wishlistApi";
 import { Heart } from "lucide-react";
 
+const IMAGE_BASE_URL = process.env.REACT_APP_API_IMAGE_URL;
+
 interface ProductCardProps {
   id: number;
   name: string;
@@ -23,9 +25,10 @@ const ProductCard: FC<ProductCardProps> = ({
   const formatPrice = (value: number) => {
     return value.toLocaleString("vi-VN") + " VNĐ";
   };
-  const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);  
+  const isAuthenticated = useSelector(
+    (state: RootState) => state.auth.isAuthenticated
+  );
   useEffect(() => {
-   
     if (!isAuthenticated) return;
     const checkWishlist = async () => {
       try {
@@ -69,12 +72,14 @@ const ProductCard: FC<ProductCardProps> = ({
         />
       </button>
       <img
-        src={thumbnailUrl || "/placeholder.png"}
+        src={`${IMAGE_BASE_URL}/${thumbnailUrl}`}
         alt={name}
         className="w-full h-40 object-contain rounded"
       />
       <h3 className="mt-2 font-semibold text-gray-800 text-center">{name}</h3>
-      <p className="text-pink-600 font-bold text-center">{formatPrice(Number(price))}</p>
+      <p className="text-pink-600 font-bold text-center">
+        {formatPrice(Number(price))}
+      </p>
       <button
         className="mt-2 w-full bg-pink-500 text-white py-2 rounded hover:bg-pink-600"
         onClick={() => dispatch(addToCart({ productId: id, quantity: 1 }))}
