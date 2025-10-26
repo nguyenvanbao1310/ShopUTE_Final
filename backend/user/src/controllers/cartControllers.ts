@@ -82,3 +82,14 @@ export const mergeGuestCart = async (req: Request, res: Response) => {
     return res.status(400).json({ success: false, message: e.message || "MERGE_FAILED" });
   }
 };
+
+export const clearCartAfterOrder = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    if (!userId) return res.status(401).json({ success: false, message: "LOGIN_REQUIRED" });
+    await CartService.clearSelectedCartItems(userId);
+    return res.json({ success: true });
+  } catch (e: any) {
+    return res.status(400).json({ success: false, message: e.message || "CLEAR_CART_AFTER_ORDER_FAILED" });
+  } 
+};
