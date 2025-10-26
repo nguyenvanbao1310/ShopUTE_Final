@@ -26,7 +26,7 @@ async function bootstrap() {
     },
   });
 
-  const corsOrigins = (process.env.FRONTEND_ORIGIN || 'http://localhost:3001', "http://localhost:3000")
+  const corsOrigins = (process.env.FRONTEND_ORIGIN || 'http://localhost:3001,http://localhost:3000')
     .split(',')
     .map((s) => s.trim())
     .filter(Boolean);

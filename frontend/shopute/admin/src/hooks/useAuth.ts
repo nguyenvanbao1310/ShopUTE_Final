@@ -93,7 +93,7 @@ export function useAuth() {
       console.error('Logout error:', error);
     } finally {
       authStore.clearAuth();
-      router.push('/login');
+      router.push('/auth/login');
     }
   };
   const verifyOtp = async (email: string, otp: string) => {
