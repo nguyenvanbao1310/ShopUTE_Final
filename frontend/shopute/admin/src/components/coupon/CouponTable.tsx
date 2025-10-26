@@ -55,13 +55,19 @@ export function CouponTable({
                     {formatDateRangeVi(c.createdAt, c.expiresAt)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <span
-                      className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                        valid ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                      }`}
-                    >
-                      {valid ? 'Còn hoạt động' : 'Hết hạn'}
-                    </span>
+                    { (c as any)?.isUsed === true || (c as any)?.isUsed === 1 ? (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-200 text-gray-700">
+                        Đã sử dụng
+                      </span>
+                    ) : valid ? (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                        Còn hoạt động
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                        Hết hạn
+                      </span>
+                    )}
                   </td>
                 </tr>
               );
