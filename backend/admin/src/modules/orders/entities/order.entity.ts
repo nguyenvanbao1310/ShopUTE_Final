@@ -45,7 +45,7 @@ export class Order {
   pointsDiscountAmount: string;
 
   @Column({ nullable: true })
-  voucherId: number;
+  couponId: number;
 
   @Column({ nullable: true })
   shippingMethodId: number;

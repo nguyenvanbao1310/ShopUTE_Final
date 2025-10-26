@@ -3,6 +3,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Bell } from 'lucide-react';
 import { useOrderNotifications } from '@/hooks/notification';
+import Link from 'next/link';
 
 export function NotificationMenu() {
   const { open, items, unread, loading, toggleOpen, fetchNotifications, setOpen } = useOrderNotifications();
@@ -48,11 +49,11 @@ export function NotificationMenu() {
             )}
             {!loading &&
               items.map((n) => (
-                <div key={n.id} className="px-4 py-3 hover:bg-gray-50">
+                <Link key={n.id} href={`/orders`} className="block px-4 py-3 hover:bg-gray-50" >
                   <div className="text-sm font-medium text-gray-900">{n.title}</div>
                   <div className="text-sm text-gray-600">{n.message}</div>
                   <div className="text-xs text-gray-400 mt-1">{new Date(n.createdAt).toLocaleString('vi-VN')}</div>
-                </div>
+                </Link>
               ))}
           </div>
         </div>
