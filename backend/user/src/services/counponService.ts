@@ -1,7 +1,7 @@
 import { Op, Sequelize } from "sequelize";
 import { CouponAttributes  } from "../types/counpon";
 import { Coupon } from "../models";
-
+import UserCoupon from "../models/UserCoupon";
 export const createCoupon = async (data: CouponAttributes) => {
   return await Coupon.create(data);
 };
@@ -43,11 +43,19 @@ export const deleteCoupon = async (id: number) => {
 /** 💰 Tìm coupon tốt nhất cho đơn hàng theo orderTotal */
 export const getBestCouponsForOrder = async (orderTotal: number, userId?: number) => {
   const now = new Date();
-
+  let usedCouponIds: number[] = [];
+  if (userId) {
+    const userUsed = await UserCoupon.findAll({
+      where: { userId },
+      attributes: ["couponId"],
+    });
+    usedCouponIds = userUsed.map((r) => r.couponId);
+  }
   return await Coupon.findAll({
     where: {
       isUsed: false, // ✅ chỉ lấy coupon chưa dùng
       expiresAt: { [Op.gte]: now }, // ✅ chưa hết hạn
+      id: { [Op.notIn]: usedCouponIds }, // ✅ chưa dùng bởi user
       [Op.or]: [
         { minOrderAmount: null },
         { minOrderAmount: { [Op.lte]: orderTotal } },
