@@ -26,7 +26,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, activeMenu, onMenuClic
     { id: 'categories', label: 'Quản lý danh mục', icon: FolderTree },
     { id: 'promotions', label: 'Quản lý khuyến mãi', icon: Gift, href: '/admin/coupons' },
     { id: 'customers', label: 'Quản lý khách hàng', icon: Users, href: '/admin/users' },
-    { id: 'reports', label: 'Báo cáo', icon: FileText , href: '/admin'},
+    { id: 'reports', label: 'Dự đoán doanh thu', icon: FileText , href: '/admin/forecast'},
     { id: 'settings', label: 'Cài đặt', icon: Settings, href: '/admin/settings' },
   ];
 
