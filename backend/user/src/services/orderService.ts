@@ -8,25 +8,27 @@ import type { OrderCreationAttributes } from "../models/Order";
 import type { OrderDetailCreationAttributes } from "../models/OrderDetail";
 import { OrderStatus, PaymentStatus } from "../types/order";
 import CancelRequest from "../models/CancelRequest";
-import Voucher from "../models/Voucher";
+import Coupon from "../models/Coupon";
 import ShippingMethod from "../models/ShippingMethod";
 import { createNotification } from "../services/notificationService";
-
+import { broadcastToRole , sendToUser} from "../config/websocket";
+import {CreateNotificationParams} from "./notificationService";
 export interface CreateOrderInput {
   userId?: number;
   code: string;
   paymentMethod?: string | null;
   note?: string | null;
   deliveryAddress?: string | null;
-  voucherId?: number | null;
+  couponId?: number | null;
   shippingMethodId: number;
   usedPoints?: number;
   items: {
     productId: number;
     quantity: number;
-    price: number; 
+    price: number;
   }[];
 }
+
 
 
 export interface CancelResult {
@@ -52,16 +54,43 @@ export async function createOrder(data: CreateOrderInput) {
         shippingFee = Number(shipping.fee);
       }
     }
-    // 3. Tính giảm giá voucher
     let discountAmount = 0;
-    if (data.voucherId) {
-      const voucher = await Voucher.findByPk(data.voucherId);
-      if (voucher) {
-        if (voucher.discountType === "PERCENT") {
-          discountAmount = (subtotal * Number(voucher.discountValue)) / 100;
-        } else {
-          discountAmount = Number(voucher.discountValue);
+    if (data.couponId) {
+      const coupon = await Coupon.findByPk(data.couponId);
+
+      if (coupon) {
+        const now = new Date();
+
+        if (coupon.isUsed) {
+          throw new Error("Mã giảm giá này đã được sử dụng.");
         }
+
+        if (coupon.expiresAt && coupon.expiresAt < now) {
+          throw new Error("Mã giảm giá này đã hết hạn.");
+        }
+
+        if (coupon.minOrderAmount && subtotal < Number(coupon.minOrderAmount)) {
+          throw new Error(
+            `Đơn hàng cần tối thiểu ${coupon.minOrderAmount}đ để áp dụng mã này.`
+          );
+        }
+
+        if (coupon.type === "PERCENT") {
+          const percentValue = Number(coupon.value);
+          discountAmount = (subtotal * percentValue) / 100;
+          // nếu có giới hạn giảm tối đa
+          if (coupon.maxDiscountValue) {
+            discountAmount = Math.min(
+              discountAmount,
+              Number(coupon.maxDiscountValue)
+            );
+          }
+        } else if (coupon.type === "AMOUNT") {
+          discountAmount = Number(coupon.value);
+        }
+
+        // ✅ đánh dấu coupon đã dùng
+        await coupon.update({ isUsed: true, usedAt: new Date() }, { transaction: t });
       }
     }
     // 4. Tính giảm giá từ điểm thưởng
@@ -83,7 +112,7 @@ export async function createOrder(data: CreateOrderInput) {
         finalAmount: finalAmount.toFixed(2),
         usedPoints,
         pointsDiscountAmount: pointsDiscountAmount.toFixed(2),
-        voucherId: data.voucherId ?? null,
+        couponId: data.couponId ?? null,
         shippingMethodId: data.shippingMethodId,
         status: "PENDING",
         paymentMethod: data.paymentMethod ?? "COD",
@@ -104,28 +133,39 @@ export async function createOrder(data: CreateOrderInput) {
     await OrderDetail.bulkCreate(details, { transaction: t });
     await t.commit();
     if (data.userId) {
-    const user = await User.findByPk(data.userId);
-      await createNotification({
-      receiverId: data.userId,
-      receiverRole: "user",
-      type: "ORDER",
-      title: "🛍️ Đơn hàng mới tạo",
-      message: `Bạn vừa đặt đơn hàng #${order.code} thành công.`,
-      actionUrl: `/orders/${order.id}`,
-      sendEmail: true,
-    });
-    const admin = await User.findOne({ where: { role: "admin" } });
-    if (admin) {
-      await createNotification({
-        receiverId: admin.id,
+      const user = await User.findByPk(data.userId);
+
+      const payloadUser = {
+        receiverId: data.userId,
+        receiverRole: "user",
+        type: "ORDER",
+        title: "🛍️ Đơn hàng mới tạo",
+        message: `Bạn vừa đặt đơn hàng #${order.code} thành công.`,
+        actionUrl: `/orders/${order.id}`,
+        sendEmail: true,
+      } as CreateNotificationParams;
+
+      const payloadAdmin = {
         receiverRole: "admin",
         type: "ORDER",
         title: "🧾 Đơn hàng mới",
-        message: `${user?.firstName || "Khách hàng"} vừa đặt đơn hàng #${order.code}.`,
+        message: `${user?.firstName || "Khách hàng"} ${user?.lastName || ""} vừa đặt đơn hàng #${order.code}.`,
         actionUrl: `/admin/orders/${order.id}`,
         sendEmail: true,
-      });
-    }
+      } as CreateNotificationParams;
+
+      // 🟢 1. Gửi WS ngay cho cả hai
+      sendToUser(data.userId, "NEW_NOTIFICATION", payloadUser);
+      broadcastToRole("admin", "NEW_NOTIFICATION", payloadAdmin);
+
+      // 🟢 2. Ghi DB song song, không chặn WS
+      const admins = await User.findAll({ where: { role: "admin" } });
+      await Promise.all([
+        createNotification(payloadUser),
+        ...admins.map((a) =>
+          createNotification({ ...payloadAdmin, receiverId: a.id })
+        ),
+      ]);
 }
     return { order, details };
   } catch (error) {

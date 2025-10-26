@@ -32,6 +32,14 @@ export const authApi = {
     apiClient.setAccessToken(null);
     return response;
   },
+  verifyOtp: async (email: string, otp: string): Promise<{ message: string }> => {
+    const res = await apiClient.post<{ message: string }>('/auth/verify-otp', { email, otp });
+    return res;
+  },
+  resendOtp: async (email: string): Promise<{ message: string }> => {
+    const res = await apiClient.post<{ message: string }>('/auth/resend-otp', { email });
+    return res;
+  }
 };
 
 export default authApi;

@@ -14,7 +14,7 @@ import orderRoutes from "./routes/orderRoutes";
 import addressRoutes from "./routes/addressRoutes";
 import wishlistRoutes from "./routes/wishlistRoutes";
 import viewedRoutes from "./routes/viewedRoutes";
-import voucherRoutes from "./routes/voucherRoutes";
+import counponRoutes from "./routes/counponRoutes";
 import shippingMethodRoutes from "./routes/shippingMethodRoutes";
 import notificationRoutes from "./routes/notificationRoutes"
 import ratingRoutes from "./routes/ratingRoutes";
@@ -54,7 +54,7 @@ app.use("/api/order", orderRoutes);
 app.use("/api/address", addressRoutes);
 app.use("/api/wishlist", wishlistRoutes);
 app.use("/api/viewed", viewedRoutes);
-app.use("/api/vouchers", voucherRoutes);
+app.use("/api/coupons", counponRoutes);
 app.use("/api/shipping-methods", shippingMethodRoutes);
 app.use("/api/nofi", notificationRoutes);
 app.use("/api/ratings", ratingRoutes);
