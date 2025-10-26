@@ -137,7 +137,7 @@ export default function OrdersPage() {
                       {o.status}
                     </td>
                     <td className="p-3 font-semibold text-right">
-                      {Number(o.totalAmount).toLocaleString("vi-VN")}₫
+                      {Number(o.finalAmount).toLocaleString("vi-VN")}₫
                     </td>
                     <td className="p-3">
                       {new Date(o.createdAt).toLocaleDateString("vi-VN")}
@@ -385,10 +385,13 @@ export default function OrdersPage() {
                           selectedOrder.discountAmount || 0
                         );
                         const shipping = Number(selectedOrder.shippingFee || 0);
-                        const vat = Math.round(
-                          (subTotal - discount + shipping) * 0.03
-                        ); // 3%
-                        const grandTotal = subTotal - discount + shipping + vat;
+                        const pointsDiscount = Number(
+                          selectedOrder.pointsDiscountAmount || 0
+                        );
+                        // const vat = Math.round(
+                        //   (subTotal - discount + shipping) * 0.03
+                        // ); // 3%
+                        const grandTotal = subTotal - discount + shipping - pointsDiscount;
 
                         return (
                           <>
@@ -403,14 +406,16 @@ export default function OrdersPage() {
                                 : "0₫"}
                             </p>
                             <p>
+                              <span className="font-medium">Giảm tiền từ điểm thưởng:</span>{" "}
+                              {pointsDiscount > 0
+                                ? `-${pointsDiscount.toLocaleString("vi-VN")}₫`
+                                : "0₫"}
+                            </p>
+                            <p>
                               <span className="font-medium">
                                 Phí vận chuyển:
                               </span>{" "}
                               {shipping.toLocaleString("vi-VN")}₫
-                            </p>
-                            <p>
-                              <span className="font-medium">VAT (3%):</span>{" "}
-                              {vat.toLocaleString("vi-VN")}₫
                             </p>
                             <hr className="my-2 border-gray-200" />
                             <p className="text-lg font-bold text-indigo-700">
