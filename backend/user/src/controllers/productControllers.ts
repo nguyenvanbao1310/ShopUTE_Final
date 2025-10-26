@@ -14,6 +14,8 @@ import {
   getAllBrandsSvc,
 } from "../services/productService";
 import { AuthRequest } from "../middleware/auth";
+import { Product, Category } from "../models";
+import { Op } from "sequelize";
 
 //sản phẩm mới nhất
 export async function newestProducts(_req: AuthRequest, res: Response) {
@@ -199,5 +201,38 @@ export async function getAllBrands(_req: Request, res: Response) {
     res
       .status(e?.status || 500)
       .json({ message: e?.message || "Internal Server Error" });
+  }
+};
+export async function searchProducts(req: Request, res: Response) {
+  try {
+    const { keyword = "", categoryName = "" } = req.query;
+
+    const whereClause: any = {};
+
+    // Nếu có từ khóa => tìm theo tên sản phẩm (LIKE)
+    if (keyword) {
+      whereClause.name = { [Op.like]: `%${keyword}%` };
+    }
+
+    // Nếu có categoryName => join sang Category để lọc theo tên danh mục
+    const includeClause: any = [];
+    if (categoryName) {
+      includeClause.push({
+        model: Category,
+        as: "Category",
+        where: { name: { [Op.like]: `%${categoryName}%` } },
+      });
+    }
+
+    const products = await Product.findAll({
+      where: whereClause,
+      include: includeClause,
+      limit: 50, // giới hạn để nhanh
+    });
+
+    return res.json(products);
+  } catch (err) {
+    console.error("❌ Lỗi tìm kiếm:", err);
+    return res.status(500).json({ message: "Lỗi server" });
   }
 };

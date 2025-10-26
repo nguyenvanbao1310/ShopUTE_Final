@@ -148,3 +148,12 @@ export async function fetchAllBrands(): Promise<string[]> {
   const { data } = await productApi.get("/products/brands");
   return data; // Backend trả ra mảng string
 }
+// 🔍 Tìm kiếm sản phẩm theo keyword và categoryName
+export async function searchProductsApi(keyword: string, categoryName?: string): Promise<Product[]> {
+  const query = new URLSearchParams();
+  if (keyword) query.append("keyword", keyword);
+  if (categoryName) query.append("categoryName", categoryName);
+
+  const { data } = await productApi.get(`/products/search?${query.toString()}`);
+  return data;
+}
