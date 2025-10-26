@@ -13,6 +13,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { AuthModule } from './modules/auth/auth.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { join } from 'path';
+import { StoreSettingsModule } from './modules/store-settings/store-settings.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -48,6 +49,7 @@ import { join } from 'path';
       rootPath: join(__dirname, '..', 'public', 'images'), // 👉 trỏ trực tiếp vào public/images
       serveRoot: '/images', // truy cập qua /images/...
     }),
+    StoreSettingsModule,
   ],
 })
 export class AppModule {}
