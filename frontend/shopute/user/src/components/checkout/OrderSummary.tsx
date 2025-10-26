@@ -1,5 +1,5 @@
 import { useSelector, useDispatch } from "react-redux";
-import { selectSelectedItems, CartItemDTO } from "../../store/cartSlice";
+import { selectSelectedItems, CartItemDTO , clearSelectedItems} from "../../store/cartSlice";
 import { Coupon } from "../../types/counpon";
 import { ShippingMethod } from "../../types/shippingMethod";
 import { Address } from "../../types/address";
@@ -9,7 +9,6 @@ import { updateProfile } from "../../store/authSlice";
 import { useOrderCalculation } from "../../hooks/useOrderCalculation";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-
 interface OrderSummaryProps {
   coupon: Coupon | null;
   paymentMethod: string;
@@ -99,6 +98,7 @@ const OrderSummary = ({
       const response = await createOrder(orderPayload);
       if (paymentMethod === "COD") {
         // Cập nhật điểm loyalty nếu có sử dụng
+        await dispatch(clearSelectedItems());
         if (usedPoints > 0 && user) {
           dispatch(updateProfile({
             loyaltyPoints: user.loyaltyPoints - usedPoints

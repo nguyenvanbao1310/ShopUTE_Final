@@ -226,7 +226,22 @@ export const mergeGuestCart = createAsyncThunk<void>(
     }
   }
 );
-
+// Clear selected items from cart (after order)
+export const clearSelectedItems = createAsyncThunk<void>(
+  "cart/clearSelectedItems",
+  async (_, { dispatch, rejectWithValue }) => {
+    try {
+      const token = getTokenFromStorage();
+      const headers: any = token
+        ? { Authorization: `Bearer ${token}` }
+        : { "x-device-id": getDeviceId() };
+      await axios.delete(`${BASE_URL}/cart/clear-selected`, { headers, withCredentials: true });
+      await dispatch(fetchCart());
+    } catch (e: any) {
+      return rejectWithValue(e?.response?.data?.message ?? "Failed to clear selected items");
+    } 
+  }
+);
 // ===== Slice =====
 const cartSlice = createSlice({
   name: "cart",
@@ -266,6 +281,9 @@ const cartSlice = createSlice({
       })
       .addCase(clearCart.rejected, (state, action) => {
         state.error = (action.payload as string) ?? "Failed to clear cart";
+      })
+      .addCase(clearSelectedItems.rejected, (state, action) => {
+        state.error = (action.payload as string) ?? "Failed to clear selected items";
       });
   },
 });

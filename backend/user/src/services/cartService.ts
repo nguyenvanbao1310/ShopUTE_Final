@@ -243,3 +243,17 @@ export async function mergeGuestCartToUser(userId: number, deviceId: string) {
     return userCart;
   });
 }
+
+export async function clearSelectedCartItems(userId: number) {
+  const cart = await Cart.findOne({ where: { userId } });
+  if (!cart) return false;
+
+  await CartItem.destroy({
+    where: {
+      cartId: cart.id,
+      selected: true,
+    },
+  });
+
+  return true;
+}
