@@ -13,6 +13,7 @@ import ShippingMethod from "../models/ShippingMethod";
 import { createNotification } from "../services/notificationService";
 import { broadcastToRole , sendToUser} from "../config/websocket";
 import {CreateNotificationParams} from "./notificationService";
+import UserCoupon from "../models/UserCoupon";
 export interface CreateOrderInput {
   userId?: number;
   code: string;
@@ -90,7 +91,17 @@ export async function createOrder(data: CreateOrderInput) {
         }
 
         // ✅ đánh dấu coupon đã dùng
-        await coupon.update({ isUsed: true, usedAt: new Date() }, { transaction: t });
+         if (coupon.userId) {
+          await coupon.update({ isUsed: true, usedAt: new Date() }, { transaction: t });
+          } 
+        // ✅ Nếu coupon chung → lưu record vào bảng user_coupons
+          else if (data.userId) {
+            await UserCoupon.create({
+              userId: data.userId,
+              couponId: coupon.id,
+              usedAt: new Date(),
+        }, { transaction: t });
+        }
       }
     }
     // 4. Tính giảm giá từ điểm thưởng

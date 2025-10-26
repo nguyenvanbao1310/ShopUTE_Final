@@ -14,7 +14,7 @@ async function bootstrap() {
   app.useStaticAssets(join(__dirname, '..', 'uploads', 'products'), {
     prefix: '/uploads/products/',
   });
-  // Enable CORS for frontend origin(s). Support comma-separated list.
+
   const corsOrigins = (process.env.FRONTEND_ORIGIN || 'http://localhost:3001')
     .split(',')
     .map((s) => s.trim())
