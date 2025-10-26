@@ -13,6 +13,7 @@ import {
   getSimilarProducts,
   getProductsByCategories,
   getAllBrands,
+  searchProducts ,
 } from "../controllers/productControllers";
 import { authMiddleware } from "../middleware/auth";
 import { listProductRatings, createProductRating } from "../controllers/ratingControllers";
@@ -37,5 +38,6 @@ router.post("/:id/ratings", authMiddleware, createProductRating);
 router.put("/:id", authMiddleware, updateProduct);
 router.post("/", authMiddleware, createProduct);
 router.get("/:id/similar", getSimilarProducts);
+router.get("/search", searchProducts);
 
 export default router;

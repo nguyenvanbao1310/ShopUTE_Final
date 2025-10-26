@@ -121,7 +121,7 @@ const Login: FC = () => {
             Are you new?{" "}
             <button
               className="text-green-600 font-medium hover:underline bg-transparent border-0 p-0 cursor-pointer"
-              onClick={() => console.log("Create Account clicked")}
+              onClick={() => navigate("/register")}
             >
               Create an Account
             </button>
