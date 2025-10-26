@@ -27,6 +27,7 @@ const ViewedProductsPage: FC = () => {
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(
     null
   );
+  const IMAGE_BASE_URL = process.env.REACT_APP_API_IMAGE_URL;
 
   const token = localStorage.getItem("token");
 
@@ -93,7 +94,7 @@ const ViewedProductsPage: FC = () => {
 
                   {/* Product Image */}
                   <img
-                    src={product.thumbnailUrl}
+                    src={`${IMAGE_BASE_URL}/${product.thumbnailUrl}`}
                     alt={product.name}
                     className="w-full h-36 object-contain rounded-lg cursor-pointer
                                transition-transform duration-300 hover:scale-105"
@@ -139,7 +140,7 @@ const ViewedProductsPage: FC = () => {
                 <X size={20} />
               </button>
               <img
-                src={quickViewProduct.thumbnailUrl}
+                src={`${IMAGE_BASE_URL}/${quickViewProduct.thumbnailUrl}`}
                 alt={quickViewProduct.name}
                 className="w-full h-48 object-contain rounded-lg mb-4"
               />

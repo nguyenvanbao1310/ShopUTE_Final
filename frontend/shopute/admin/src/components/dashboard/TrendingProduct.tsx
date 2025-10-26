@@ -1,6 +1,6 @@
-'use client';
-import React, { useEffect, useState } from 'react';
-import { analyticsApi, TopProduct } from '@/lib/analyticsApi';
+"use client";
+import React, { useEffect, useState } from "react";
+import { analyticsApi, TopProduct } from "@/lib/analyticsApi";
 
 export const TrendingProduct: React.FC = () => {
   const [product, setProduct] = useState<TopProduct | null>(null);
@@ -14,7 +14,7 @@ export const TrendingProduct: React.FC = () => {
           setProduct(data[0]); // ✅ Lấy sản phẩm đầu tiên (bán chạy nhất)
         }
       } catch (error) {
-        console.error('❌ Lỗi khi tải sản phẩm xu hướng:', error);
+        console.error("❌ Lỗi khi tải sản phẩm xu hướng:", error);
       } finally {
         setLoading(false);
       }
@@ -40,10 +40,12 @@ export const TrendingProduct: React.FC = () => {
   }
 
   // 🔗 Đường dẫn hình ảnh (ghép domain backend)
-  const BASE_URL = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:8081';
-  const imageSrc = product.imageUrl?.startsWith('http')
+  const BASE_URL =
+    process.env.NEXT_PUBLIC_API_URL?.replace("/api", "") ||
+    "http://localhost:8081";
+  const imageSrc = product.imageUrl?.startsWith("http")
     ? product.imageUrl
-    : `${BASE_URL}${product.imageUrl}`;
+    : `${BASE_URL}/${product.imageUrl}`;
 
   // 💹 Giả lập tỷ lệ tăng trưởng
   const trendValue = (Math.random() * 10 + 3).toFixed(1); // 3–13%
@@ -51,7 +53,9 @@ export const TrendingProduct: React.FC = () => {
   return (
     <div className="bg-white rounded-xl p-6 shadow-sm text-center">
       {/* Header */}
-      <h3 className="text-lg font-semibold text-gray-800 mb-4">Sản phẩm xu hướng</h3>
+      <h3 className="text-lg font-semibold text-gray-800 mb-4">
+        Sản phẩm xu hướng
+      </h3>
 
       {/* Trend badge */}
       <div className="bg-green-50 text-green-600 text-xs font-medium px-3 py-1 rounded-full inline-block mb-4">
@@ -74,15 +78,15 @@ export const TrendingProduct: React.FC = () => {
       </div>
 
       {/* Tên + giá */}
-      <h4 className="font-semibold text-gray-800 mb-1 truncate">{product.name}</h4>
+      <h4 className="font-semibold text-gray-800 mb-1 truncate">
+        {product.name}
+      </h4>
 
-      {/* Nếu bạn có thêm giá trong DB thì hiển thị */}
       <div className="flex items-center justify-center gap-2">
         <span className="text-xl font-bold text-gray-800">
-          {(product.totalSold * 50000).toLocaleString('vi-VN')}đ
-        </span>
-        <span className="text-sm text-gray-400 line-through">
-          {((product.totalSold * 50000) * 1.1).toLocaleString('vi-VN')}đ
+          {product.price
+            ? `${Number(product.price).toLocaleString("vi-VN")}đ`
+            : "—"}
         </span>
       </div>
     </div>
