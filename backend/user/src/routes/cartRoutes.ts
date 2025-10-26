@@ -13,7 +13,7 @@ router.patch("/items/:id", CartCtrl.updateItem);
 router.delete("/items/:id", CartCtrl.removeItem);
 router.delete("/clear", CartCtrl.clearCart);
 router.post("/toggle-select-all", CartCtrl.toggleSelectAll);
-
+router.delete("/clear-selected",authMiddleware,CartCtrl.clearCartAfterOrder);
 // Bắt buộc đăng nhập: merge guest -> user
 router.post("/merge", authMiddleware, CartCtrl.mergeGuestCart);
 

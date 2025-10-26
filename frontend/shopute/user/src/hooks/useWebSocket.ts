@@ -1,7 +1,14 @@
 import { useEffect, useRef, useCallback } from "react";
 
+/**
+ * Hook quản lý WebSocket realtime
+ * @param userId ID người dùng hiện tại (hoặc null nếu chưa đăng nhập)
+ * @param role Vai trò ("user" hoặc "admin")
+ * @param onMessage Callback khi nhận được dữ liệu mới
+ */
 export function useWebSocket(
-  userId: number | null, 
+  userId: number | null,
+  role: "user" | "admin" | null,
   onMessage: (data: any) => void
 ) {
   const wsRef = useRef<WebSocket | null>(null);
@@ -9,36 +16,39 @@ export function useWebSocket(
   const onMessageRef = useRef(onMessage);
   const isUnmounting = useRef(false);
 
+  // 🔁 Giữ reference cho onMessage (tránh closure cũ)
   useEffect(() => {
     onMessageRef.current = onMessage;
   }, [onMessage]);
 
+  // 🚀 Hàm kết nối WebSocket
   const connect = useCallback(() => {
-    if (!userId || isUnmounting.current) return;
-    if (wsRef.current?.readyState === WebSocket.OPEN) return;
+    if (!userId || !role || isUnmounting.current) return;
 
+    // Ngắt kết nối cũ nếu còn
+    if (wsRef.current?.readyState === WebSocket.OPEN) return;
     if (wsRef.current) {
       wsRef.current.close();
       wsRef.current = null;
     }
 
-    console.log("🚀 Opening WebSocket for user", userId);
-    const ws = new WebSocket("ws://localhost:8088/ws"); // ✅ Thêm /ws
+    console.log(`🚀 Opening WebSocket for ${role} ${userId}`);
+    const ws = new WebSocket("ws://localhost:8088/ws");
     wsRef.current = ws;
 
     ws.onopen = () => {
       console.log("✅ WS Connected");
-      ws.send(JSON.stringify({ type: "register", userId }));
+      // 👇 Gửi thông tin đăng ký
+      ws.send(JSON.stringify({ type: "register", userId, role }));
     };
 
     ws.onmessage = (event) => {
-      console.log("📩 Raw WS message:", event.data);
       try {
         const data = JSON.parse(event.data);
-        console.log("✅ Parsed message:", data);
-        onMessageRef.current(data);
+        console.log("📩 WS Message:", data);
+        onMessageRef.current?.(data);
       } catch (err) {
-        console.error("❌ Invalid WS message:", err);
+        console.error("❌ WS Invalid message:", err);
       }
     };
 
@@ -50,37 +60,34 @@ export function useWebSocket(
       console.log("❌ WS Disconnected");
       wsRef.current = null;
 
-      if (userId && !isUnmounting.current) {
+      if (!isUnmounting.current && userId && role) {
+        console.log("♻️ Reconnecting in 3s...");
         if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
-        reconnectTimer.current = setTimeout(() => {
-          console.log("♻️ Reconnecting...");
-          connect(); // ✅ Gọi lại connect()
-        }, 3000);
+        reconnectTimer.current = setTimeout(connect, 3000);
       }
     };
-  }, [userId]);
+  }, [userId, role]);
 
-      useEffect(() => {
-      if (!userId) {
-        console.log("👋 User logged out → closing WS connection");
-        if (wsRef.current) {
-          wsRef.current.close();
-          wsRef.current = null;
-        }
-        return;
-      }
+  // 👇 Lifecycle quản lý WebSocket
+  useEffect(() => {
+    isUnmounting.current = false;
 
+    if (userId && role) {
       connect();
+    } else {
+      console.log("👋 User logged out → closing WS");
+      wsRef.current?.close();
+      wsRef.current = null;
+    }
 
-      return () => {
-        console.log("🧹 Cleanup WS for user", userId);
-        if (wsRef.current) {
-          wsRef.current.close();
-          wsRef.current = null;
-        }
-      };
-    }, [userId]);
-
+    return () => {
+      console.log("🧹 Cleanup WebSocket");
+      isUnmounting.current = true;
+      wsRef.current?.close();
+      wsRef.current = null;
+      if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
+    };
+  }, [userId, role, connect]);
 
   return wsRef;
 }

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   HttpCode,
@@ -27,16 +28,28 @@ export class AuthController {
 
   @Post('register')
   async register(@Body() dto: RegisterDto) {
-    const { user } = await this.auth.register(dto);
-    return { user };
+    const result = await this.auth.register(dto);
+    return result; 
   }
-
   @Post('login')
   @HttpCode(200)
-  async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
-    const { user, access, refresh } = await this.auth.login(dto);
-    this.setRefreshCookie(res, refresh);
-    return { user, access };
+  async login(
+    @Body() dto: LoginDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.auth.login(dto);
+    // ⚠️ Nếu service ném lỗi UnauthorizedException (OTP chưa active)
+    // Nest sẽ tự trả HTTP 401 về FE, không cần catch ở đây.
+    // ✅ Nếu login hợp lệ → set refresh token
+    if (result.refresh) {
+      this.setRefreshCookie(res, result.refresh);
+    }
+
+    return {
+      message: 'Đăng nhập thành công',
+      user: result.user,
+      access: result.access,
+    };
   }
 
 @Post('refresh')
@@ -55,5 +68,22 @@ async refresh(@Req() req: Request) {
     res.clearCookie('refresh_token', { path: '/auth/refresh' });
     return { message: 'Đăng xuất thành công' };
 }
-
+@Post('verify-otp')
+  async verifyOtp(@Body() body: { email: string; otp: string }) {
+    const { email, otp } = body;
+    if (!email || !otp) {
+      throw new BadRequestException('Thiếu email hoặc mã OTP');
+    }
+    const result = await this.auth.verifyOtp(email, otp);
+    return result; // { message: 'Xác thực email thành công!' }
+  }
+  @Post('resend-otp')
+  async resendOtp(@Body() body: { email: string }) {
+    const { email } = body; 
+    if (!email) {
+      throw new BadRequestException('Thiếu email');
+    }
+    const result = await this.auth.resendOtp(email);
+    return result; // { message: 'OTP đã được gửi lại' }
+  }
 }

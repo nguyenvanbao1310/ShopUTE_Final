@@ -1,9 +1,9 @@
 import Notification  from "../models/Notification";
-import { sendToUser, broadcast } from "../config/websocket";
+import { sendToUser } from "../config/websocket";
 import { sendNotificationEmail } from "../services/mailer";
 import { User } from "../models";
 
-interface CreateNotificationParams {
+export interface CreateNotificationParams {
   receiverId: number;
   receiverRole: "user" | "admin";
   type?: "ORDER" | "COMMENT" | "REVIEW" | "SYSTEM" | "LOYALTY";
@@ -31,11 +31,11 @@ export async function createNotification({
     actionUrl: actionUrl ?? null,
     sendEmail,
   });
-    sendToUser(receiverId, "NEW_NOTIFICATION", notif.toJSON());
+  // sendToUser(receiverId, "NEW_NOTIFICATION", notif.toJSON());
   if (sendEmail) {
    const user = await User.findByPk(receiverId);
     if (user?.email) {
-      await sendNotificationEmail(user.email, title, message, actionUrl);
+       sendNotificationEmail(user.email, title, message, actionUrl);
     }
   }
   return notif;

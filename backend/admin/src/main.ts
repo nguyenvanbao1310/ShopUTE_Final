@@ -25,9 +25,13 @@ async function bootstrap() {
       res.setHeader('Access-Control-Allow-Origin', '*');
     },
   });
-  // Enable CORS for frontend origin
+
+  const corsOrigins = (process.env.FRONTEND_ORIGIN || 'http://localhost:3001')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
   app.enableCors({
-    origin: process.env.FRONTEND_ORIGIN || 'http://localhost:3001',
+    origin: corsOrigins.length === 1 ? corsOrigins[0] : corsOrigins,
     credentials: true,
   });
 

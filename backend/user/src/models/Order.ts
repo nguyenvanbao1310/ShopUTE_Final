@@ -1,7 +1,7 @@
 import { Model, DataTypes, Optional } from "sequelize";
 import sequelize from "../config/configdb";
-import Voucher from "./Voucher";
 import ShippingMethod from "./ShippingMethod";
+import Coupon from "./Coupon";
 export interface OrderAttributes {
   id: number;
   userId: number | null; // nếu có bảng Users; tạm cho phép null
@@ -12,7 +12,7 @@ export interface OrderAttributes {
   finalAmount?: string | null;
   usedPoints?: number;
   pointsDiscountAmount?: string | null;
-  voucherId?: number | null;
+  couponId?: number | null;
   shippingMethodId?: number | null;
   status:
     | "PENDING"
@@ -40,7 +40,7 @@ export interface OrderCreationAttributes
     | "finalAmount"
     | "usedPoints"
     | "pointsDiscountAmount"
-    | "voucherId"
+    | "couponId"
     | "shippingMethodId"
     | "paymentMethod"
     | "paymentStatus"
@@ -63,7 +63,7 @@ class Order
   public finalAmount!: string | null;
   public usedPoints!: number;
   public pointsDiscountAmount!: string | null;
-  public voucherId!: number | null;
+  public couponId!: number | null; 
   public shippingMethodId!: number | null;
   public status!:
     | "PENDING"
@@ -96,7 +96,7 @@ Order.init(
     finalAmount: { type: DataTypes.DECIMAL(14, 2), allowNull: true },
     usedPoints: { type: DataTypes.INTEGER.UNSIGNED, defaultValue: 0 },
     pointsDiscountAmount: { type: DataTypes.DECIMAL(14, 2), allowNull: true },
-    voucherId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },
+    couponId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },
     shippingMethodId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },
     status: {
       type: DataTypes.ENUM(
@@ -130,8 +130,9 @@ Order.init(
     timestamps: true,
   }
 );
-Order.belongsTo(Voucher, { foreignKey: "voucherId", as: "voucher" });
-Voucher.hasMany(Order, { foreignKey: "voucherId", as: "orders" });
+// 🧩 Associations
+Order.belongsTo(Coupon, { foreignKey: "couponId", as: "coupon" }); // ✅
+Coupon.hasMany(Order, { foreignKey: "couponId", as: "orders" });
 
 Order.belongsTo(ShippingMethod, { foreignKey: "shippingMethodId", as: "shippingMethod" });
 ShippingMethod.hasMany(Order, { foreignKey: "shippingMethodId", as: "orders" });

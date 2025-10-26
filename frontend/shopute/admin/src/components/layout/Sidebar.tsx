@@ -17,56 +17,17 @@ interface SidebarProps {
   activeMenu: string;
   onMenuClick: (id: string) => void;
 }
-export const Sidebar: React.FC<SidebarProps> = ({
-  isOpen,
-  activeMenu,
-  onMenuClick,
-}) => {
-  const menuItems: {
-    id: string;
-    label: string;
-    icon: React.ElementType;
-    href?: string;
-  }[] = [
-    {
-      id: "dashboard",
-      label: "Dashboard",
-      icon: LayoutDashboard,
-      href: "/admin",
-    },
-    {
-      id: "comments",
-      label: "Quản lý đánh giá",
-      icon: MessageSquare,
-      href: "/admin/comments",
-    },
-    {
-      id: "products",
-      label: "Quản lý sản phẩm",
-      icon: Package,
-      href: "/products",
-    },
-    {
-      id: "orders",
-      label: "Quản lý đơn hàng",
-      icon: ShoppingCart,
-      href: "/orders",
-    },
-    { id: "categories", label: "Quản lý danh mục", icon: FolderTree },
-    {
-      id: "promotions",
-      label: "Quản lý khuyến mãi",
-      icon: Gift,
-      href: "/admin/coupons",
-    },
-    {
-      id: "customers",
-      label: "Quản lý khách hàng",
-      icon: Users,
-      href: "/admin/users",
-    },
-    { id: "reports", label: "Báo cáo", icon: FileText },
-    { id: "settings", label: "Cài đặt", icon: Settings },
+export const Sidebar: React.FC<SidebarProps> = ({ isOpen, activeMenu, onMenuClick }) => {
+  const menuItems: { id: string; label: string; icon: React.ElementType; href?: string }[] = [
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard , href: '/admin'},
+    { id: 'comments', label: 'Quản lý đánh giá', icon: MessageSquare, href: '/admin/comments' },
+    { id: 'products', label: 'Quản lý sản phẩm', icon: Package, href: "/products" },
+    { id: 'orders', label: 'Quản lý đơn hàng', icon: ShoppingCart, href: "/orders" },
+    { id: 'categories', label: 'Quản lý danh mục', icon: FolderTree },
+    { id: 'promotions', label: 'Quản lý khuyến mãi', icon: Gift, href: '/admin/coupons' },
+    { id: 'customers', label: 'Quản lý khách hàng', icon: Users, href: '/admin/users' },
+    { id: 'reports', label: 'Báo cáo', icon: FileText , href: '/admin'},
+    { id: 'settings', label: 'Cài đặt', icon: Settings, href: '/admin/settings' },
   ];
 
   return (
