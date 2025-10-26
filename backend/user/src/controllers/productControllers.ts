@@ -10,6 +10,8 @@ import {
   updateProductSvc,
   getProductsByCategoryNameSvc,
   getSimilarProductsSvc ,
+  getProductsByCategoryNamesSvc ,
+  getAllBrandsSvc,
 } from "../services/productService";
 import { AuthRequest } from "../middleware/auth";
 
@@ -155,3 +157,47 @@ export async function getSimilarProducts(req: Request, res: Response) {
     });
   }
 }
+export const getProductsByCategories = async (req: Request, res: Response) => {
+  try {
+    const namesParam = req.query.names as string;
+    if (!namesParam) {
+      return res.status(400).json({ message: "Category names are required" });
+    }
+
+    const categoryNames = namesParam.split(",").map((n) => n.trim());
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 12;
+    const brandQuery = req.query.brand as string;
+    const brands = brandQuery ? brandQuery.split(",").map((b) => b.trim()) : undefined;
+
+    const { products, pagination } = await getProductsByCategoryNamesSvc(
+      categoryNames,
+      page,
+      limit,
+      brands
+    );
+
+    if (!products || products.length === 0) {
+      return res.status(404).json({ message: "No products found for these categories" });
+    }
+
+    res.json({ products, pagination });
+  } catch (error) {
+    console.error("Error in getProductsByCategories:", error);
+    res.status(500).json({
+      message: "Error fetching products",
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
+};
+// ✅ Controller lấy danh sách thương hiệu
+export async function getAllBrands(_req: Request, res: Response) {
+  try {
+    const data = await getAllBrandsSvc();
+    res.json(data);
+  } catch (e: any) {
+    res
+      .status(e?.status || 500)
+      .json({ message: e?.message || "Internal Server Error" });
+  }
+};

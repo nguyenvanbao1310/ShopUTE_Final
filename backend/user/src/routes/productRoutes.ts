@@ -11,6 +11,8 @@ import {
   updateProduct,
   getProductsByCategory,
   getSimilarProducts,
+  getProductsByCategories,
+  getAllBrands,
 } from "../controllers/productControllers";
 import { authMiddleware } from "../middleware/auth";
 import { listProductRatings, createProductRating } from "../controllers/ratingControllers";
@@ -18,6 +20,8 @@ import { listProductRatings, createProductRating } from "../controllers/ratingCo
 const router = Router();
 
 // Lists
+router.get("/categories", getProductsByCategories);
+router.get("/brands", getAllBrands);
 router.get("/newest", newestProducts); // 08 sản phẩm mới nhất
 router.get("/best-sellers", bestSellers); // 06 sản phẩm bán chạy nhất
 router.get("/most-viewed", mostViewed); // 08 sản phẩm xem nhiều
@@ -33,4 +37,5 @@ router.post("/:id/ratings", authMiddleware, createProductRating);
 router.put("/:id", authMiddleware, updateProduct);
 router.post("/", authMiddleware, createProduct);
 router.get("/:id/similar", getSimilarProducts);
+
 export default router;
