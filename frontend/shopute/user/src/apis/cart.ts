@@ -53,3 +53,6 @@ export async function toggleSelectAll(selected: boolean): Promise<void> {
 export async function mergeGuestCart(deviceId: string): Promise<void> {
   await api.post(`/cart/merge`, { deviceId });
 }
+export async function clearSelectedItems(): Promise<void> {
+  await api.delete(`/cart/clear-selected`);
+}

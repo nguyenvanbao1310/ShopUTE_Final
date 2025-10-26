@@ -11,12 +11,27 @@ async function bootstrap() {
   app.use(cookieParser());
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
-  app.useStaticAssets(join(__dirname, '..', 'uploads', 'products'), {
+  app.useStaticAssets(join(process.cwd(), 'uploads', 'products'), {
     prefix: '/uploads/products/',
+    setHeaders: (res) => {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+    },
   });
-  // Enable CORS for frontend origin
+
+  // Serve ảnh avatar
+  app.useStaticAssets(join(process.cwd(), 'uploads', 'avatar'), {
+    prefix: '/uploads/avatar/',
+    setHeaders: (res) => {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+    },
+  });
+
+  const corsOrigins = (process.env.FRONTEND_ORIGIN || 'http://localhost:3001')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
   app.enableCors({
-    origin: process.env.FRONTEND_ORIGIN || 'http://localhost:3001',
+    origin: corsOrigins.length === 1 ? corsOrigins[0] : corsOrigins,
     credentials: true,
   });
 

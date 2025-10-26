@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import {
@@ -78,21 +80,29 @@ export default function EditProductModal({
 
   const handleRemoveImage = async (index: number) => {
     const target = imageObjects[index];
-    if (!target) return;
+    if (!target || !product) return;
 
     try {
-      // Nếu là ảnh cũ (đã có id trong DB)
+      // Nếu là ảnh cũ trong DB → gọi API xoá
       if ("id" in target && target.id) {
         await productApi.deleteImage(target.id);
       }
+
+      // Sau khi xoá → load lại danh sách ảnh phụ
+      const API_URL =
+        process.env.NEXT_PUBLIC_API_BASE_IMAGE_URL || "http://localhost:3000";
+      const updatedImgs = await productApi.getImages(product.id);
+      const formatted = updatedImgs.map((img) => ({
+        id: img.id,
+        url: `${API_URL}/${img.url}`,
+      }));
+
+      // ✅ Cập nhật lại ảnh phụ, nhưng giữ nguyên thumbnail
+      setImageObjects(formatted);
+      setImagePreviews(formatted.map((img) => img.url));
     } catch (err) {
       console.error("Lỗi khi xoá ảnh:", err);
     }
-
-    // Xóa khỏi UI
-    setImageObjects((prev) => prev.filter((_, i) => i !== index));
-    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
-    setImageFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -101,6 +111,19 @@ export default function EditProductModal({
 
     const form = e.currentTarget;
     const formData = new FormData();
+
+    // 🧩 Validate: bắt buộc phải có ảnh thumbnail
+    const thumbnailInput = form.querySelector(
+      'input[name="thumbnail"]'
+    ) as HTMLInputElement;
+
+    const hasNewThumbnail = thumbnailInput?.files?.[0];
+    const hasExistingThumbnail = !thumbnailRemoved && thumbnailPreview !== null;
+
+    if (!hasNewThumbnail && !hasExistingThumbnail) {
+      alert("❌ Vui lòng chọn ảnh thumbnail cho sản phẩm!");
+      return;
+    }
 
     // === Validate: phải có ít nhất 1 ảnh phụ ===
     const totalImages =
@@ -130,15 +153,13 @@ export default function EditProductModal({
     if (thumbnailRemoved) {
       formData.append("removeThumbnail", "true");
     }
-    // Thêm ảnh thumbnail (nếu có chọn)
-    const thumbnailInput = form.querySelector(
-      'input[name="thumbnail"]'
-    ) as HTMLInputElement;
-    if (thumbnailInput?.files?.[0]) {
-      formData.append("thumbnail", thumbnailInput.files[0]);
+
+    // Thêm thumbnail nếu có chọn mới
+    if (hasNewThumbnail) {
+      formData.append("thumbnail", thumbnailInput.files![0]);
     }
 
-    // Thêm ảnh phụ (nếu có)
+    // Thêm ảnh phụ
     const imagesInput = form.querySelector(
       'input[name="images"]'
     ) as HTMLInputElement;
@@ -369,7 +390,11 @@ export default function EditProductModal({
             {/* Footer */}
             <div className="col-span-3 flex justify-end pt-4 border-t mt-3">
               <DialogFooter className="flex justify-end gap-3">
-                <Button type="button" variant="secondary" onClick={onClose}>
+                <Button
+                  type="button"
+                  className="bg-gray-300 text-gray-800 hover:bg-gray-400"
+                  onClick={onClose}
+                >
                   Cancel
                 </Button>
                 <Button type="submit">Save Changes</Button>

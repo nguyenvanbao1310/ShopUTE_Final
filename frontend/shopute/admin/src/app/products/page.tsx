@@ -12,22 +12,27 @@ import { uploadImage } from "../../lib/uploadImage";
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [sortBy, setSortBy] = useState("Newest");
   const [openModal, setOpenModal] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [search, setSearch] = useState("");
 
+  const limit = 7; // ✅ mỗi trang 7 sản phẩm
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_IMAGE_URL;
 
   // 🧩 Load danh sách sản phẩm
   useEffect(() => {
     fetchProducts();
-  }, []);
+  }, [page, sortBy, search]);
 
   const fetchProducts = async () => {
     try {
-      const data = await productApi.getAll();
-      setProducts(data);
+      const res = await productApi.getAll(page, limit, search, sortBy);
+      setProducts(res.data);
+      setTotalPages(res.totalPages);
     } catch (error) {
       console.error("❌ Failed to fetch products:", error);
     }
@@ -84,7 +89,7 @@ export default function ProductsPage() {
         | "ACTIVE"
         | "INACTIVE",
       thumbnailUrl,
-      imageUrls, // tạm bỏ ảnh
+      imageUrls,
     };
 
     try {
@@ -113,7 +118,7 @@ export default function ProductsPage() {
   // 💾 Lưu chỉnh sửa
   const handleEditSubmit = async (id: number, formData: FormData) => {
     try {
-      const updatedProduct = {
+      const updatedProduct: any = {
         name: formData.get("name") as string,
         description: formData.get("description") as string,
         price: Number(formData.get("price")),
@@ -125,23 +130,21 @@ export default function ProductsPage() {
         storage: formData.get("storage") as string,
         gpu: formData.get("gpu") as string,
         screen: formData.get("screen") as string,
-        status: ((formData.get("status") as string) === "ACTIVE"
-          ? "ACTIVE"
-          : "INACTIVE") as "ACTIVE" | "INACTIVE",
-        thumbnailUrl: formData.get("thumbnailUrl") as string | undefined,
+        status:
+          (formData.get("status") as string) === "ACTIVE"
+            ? "ACTIVE"
+            : "INACTIVE",
         imageUrls: [] as string[],
       };
 
-      console.log("✅ Sending updated product:", updatedProduct);
-
-      // Nếu có thumbnail mới
+      // 🟢 Nếu có upload thumbnail mới thì mới thêm thumbnailUrl
       const thumbnailFile = formData.get("thumbnail") as File;
       if (thumbnailFile && thumbnailFile.size > 0) {
         const uploadedUrl = await uploadImage(thumbnailFile);
         updatedProduct.thumbnailUrl = uploadedUrl;
       }
 
-      // Nếu có ảnh phụ mới
+      // 🟢 Nếu có upload thêm ảnh phụ thì thêm imageUrls
       const images = formData.getAll("images") as File[];
       if (images.length > 0) {
         const uploadedUrls = await Promise.all(images.map(uploadImage));
@@ -158,6 +161,15 @@ export default function ProductsPage() {
     }
   };
 
+  const handleExportCSV = async () => {
+    try {
+      await productApi.exportCSV();
+    } catch (error) {
+      console.error("❌ Xuất CSV thất bại:", error);
+      alert("❌ Lỗi khi xuất CSV!");
+    }
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -170,6 +182,16 @@ export default function ProductsPage() {
                   Manage your store inventory efficiently
                 </p>
               </div>
+              <input
+                type="text"
+                placeholder="Search by name, brand, ID..."
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(1); // reset về trang đầu
+                }}
+                className="border border-gray-300 rounded-md py-1.5 px-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 w-56"
+              />
 
               <div className="flex gap-3 items-center">
                 <div className="relative">
@@ -188,12 +210,19 @@ export default function ProductsPage() {
                 </div>
 
                 <AdminButton
+                  type="button"
                   variant="primary"
                   onClick={() => setOpenModal(true)}
                 >
                   Add Product
                 </AdminButton>
-                <AdminButton variant="secondary">Export as CSV</AdminButton>
+                <AdminButton
+                  type="button"
+                  variant="secondary"
+                  onClick={handleExportCSV}
+                >
+                  Export as CSV
+                </AdminButton>
               </div>
             </div>
 
@@ -260,15 +289,11 @@ export default function ProductsPage() {
                       <Trash2
                         className="text-red-600 cursor-pointer w-5 h-5"
                         onClick={async () => {
-                          if (
-                            confirm(
-                              `Bạn có chắc muốn xóa sản phẩm "${p.name}"?`
-                            )
-                          ) {
+                          if (confirm(`Xóa sản phẩm "${p.name}"?`)) {
                             try {
                               await productApi.remove(p.id);
                               alert("🗑 Xóa sản phẩm thành công!");
-                              setProducts(await productApi.getAll());
+                              await fetchProducts();
                             } catch (err) {
                               console.error(err);
                               alert("❌ Lỗi khi xóa sản phẩm!");
@@ -281,6 +306,27 @@ export default function ProductsPage() {
                 ))}
               </tbody>
             </table>
+
+            {/* 🔢 Pagination */}
+            <div className="flex justify-center items-center mt-6 gap-4">
+              <button
+                disabled={page === 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                className="px-4 py-2 border rounded disabled:opacity-50"
+              >
+                Prev
+              </button>
+              <span>
+                Page {page} / {totalPages}
+              </span>
+              <button
+                disabled={page === totalPages}
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                className="px-4 py-2 border rounded disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
           </CardContent>
         </Card>
 

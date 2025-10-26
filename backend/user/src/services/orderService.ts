@@ -1,4 +1,4 @@
-import { Transaction } from "sequelize";
+import { Model, Transaction } from "sequelize";
 import sequelize from "../config/configdb";
 import Order from "../models/Order";
 import OrderDetail from "../models/OrderDetail";
@@ -13,6 +13,7 @@ import ShippingMethod from "../models/ShippingMethod";
 import { createNotification } from "../services/notificationService";
 import { broadcastToRole , sendToUser} from "../config/websocket";
 import {CreateNotificationParams} from "./notificationService";
+import UserCoupon from "../models/UserCoupon";
 export interface CreateOrderInput {
   userId?: number;
   code: string;
@@ -90,7 +91,17 @@ export async function createOrder(data: CreateOrderInput) {
         }
 
         // ✅ đánh dấu coupon đã dùng
-        await coupon.update({ isUsed: true, usedAt: new Date() }, { transaction: t });
+         if (coupon.userId) {
+          await coupon.update({ isUsed: true, usedAt: new Date() }, { transaction: t });
+          } 
+        // ✅ Nếu coupon chung → lưu record vào bảng user_coupons
+          else if (data.userId) {
+            await UserCoupon.create({
+              userId: data.userId,
+              couponId: coupon.id,
+              usedAt: new Date(),
+        }, { transaction: t });
+        }
       }
     }
     // 4. Tính giảm giá từ điểm thưởng
@@ -141,7 +152,7 @@ export async function createOrder(data: CreateOrderInput) {
         type: "ORDER",
         title: "🛍️ Đơn hàng mới tạo",
         message: `Bạn vừa đặt đơn hàng #${order.code} thành công.`,
-        actionUrl: `/orders/${order.id}`,
+        actionUrl: `/orders`,
         sendEmail: true,
       } as CreateNotificationParams;
 
@@ -150,7 +161,7 @@ export async function createOrder(data: CreateOrderInput) {
         type: "ORDER",
         title: "🧾 Đơn hàng mới",
         message: `${user?.firstName || "Khách hàng"} ${user?.lastName || ""} vừa đặt đơn hàng #${order.code}.`,
-        actionUrl: `/admin/orders/${order.id}`,
+        actionUrl: `/admin/orders`,
         sendEmail: true,
       } as CreateNotificationParams;
 
@@ -323,9 +334,32 @@ export async function getUserOrders(userId: number) {
           },
         ],
       },
+      { model: Coupon, as: "coupon" },
+      { model: ShippingMethod, as: "shippingMethod" },
     ],
     order: [["createdAt", "DESC"]],
   });
 
   return orders;
+}
+
+export async function getOrderById(orderId: number) {
+  const order = await Order.findByPk(orderId, {
+    include: [
+      {
+        
+        model: OrderDetail, 
+        as: "OrderDetails",
+        include: [
+          {
+            model: Product,
+            as: "Product", // alias đúng trong association
+          },  
+        ],
+      },
+      { model: Coupon, as: "coupon" },
+      { model: ShippingMethod, as: "shippingMethod" },
+    ],
+  });
+  return order;
 }
