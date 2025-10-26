@@ -142,6 +142,23 @@ export async function createOrder(data: CreateOrderInput) {
     }));
 
     await OrderDetail.bulkCreate(details, { transaction: t });
+    for (const item of data.items) {
+      const product = await Product.findByPk(item.productId, { transaction: t });
+      if (!product) {
+        throw new Error(`Không tìm thấy sản phẩm ID ${item.productId}`);
+      }
+
+      // Nếu sản phẩm không đủ tồn kho
+      if (product.stock < item.quantity) {
+        throw new Error(`Sản phẩm ${product.name} không đủ số lượng trong kho.`);
+      }
+
+      // Cập nhật tồn kho
+      await product.update(
+        { stock: product.stock - item.quantity },
+        { transaction: t }
+      );
+    }
     await t.commit();
     if (data.userId) {
       const user = await User.findByPk(data.userId);
