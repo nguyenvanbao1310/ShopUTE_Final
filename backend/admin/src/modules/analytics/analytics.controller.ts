@@ -36,5 +36,9 @@ export class AnalyticsController {
 getSalesByLocation() {
   return this.analyticsService.getSalesByLocation();
 }
+  @Get('forecast')
+  async getRevenueForecast() {
+    return await this.analyticsService.getRevenueForecast();
+  }
 
 }
