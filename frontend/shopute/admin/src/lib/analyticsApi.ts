@@ -21,12 +21,26 @@ export type TopProduct = {
   name: string;
     imageUrl?: string;
   totalSold: number;
+  price: number; 
 };
 export type LocationSales = {
   name: string;
   percent: number;
 };
+// 📦 Inventory forecast
+export type InventoryForecastItem = {
+  month: string;
+  predicted_sold: number;
+  predicted_stock: number;
+};
 
+export type InventoryAlert = {
+  productId: number;
+  productName: string;
+  currentStock: number;
+  outOfStockMonth: string;
+  predicted_sold: number;
+};
 export const analyticsApi = {
   // 📊 Lấy doanh thu theo tháng
   async getRevenue(): Promise<RevenueResponse> {
@@ -51,5 +65,17 @@ export const analyticsApi = {
   },
   async getForecast(): Promise<ForecastResponse> {
     return apiClient.get<ForecastResponse>("/analytics/forecast");
+  },
+   // 📦 Dự đoán tồn kho cho 1 sản phẩm
+  async getInventoryForecast(productId: number): Promise<{
+    history: { month: string; sold: number; stock: number }[];
+    forecast: InventoryForecastItem[];
+  }> {
+    return apiClient.get(`/analytics/inventory-forecast?productId=${productId}`);
+  },
+
+  // 🧠 Dự đoán tồn kho (tất cả sản phẩm – cảnh báo sắp hết)
+  async getInventoryAlerts(): Promise<InventoryAlert[]> {
+    return apiClient.get<InventoryAlert[]>("/analytics/inventory-forecast/all");
   },
 };

@@ -1,5 +1,6 @@
 import { Controller, Get } from '@nestjs/common';
 import { AnalyticsService } from './analytics.service';
+import { InventoryAlert } from './types/inventory-alert.type';
 
 @Controller('analytics')
 export class AnalyticsController {
@@ -40,5 +41,9 @@ getSalesByLocation() {
   async getRevenueForecast() {
     return await this.analyticsService.getRevenueForecast();
   }
+  @Get('inventory-forecast/all')
+async getInventoryAlerts(): Promise<InventoryAlert[]> {
+  return this.analyticsService.getInventoryAlerts();
+}
 
 }

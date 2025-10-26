@@ -11,6 +11,7 @@ import {
   FileText,
   Settings,
   MessageSquare,
+  PackageSearch ,
 } from "lucide-react";
 interface SidebarProps {
   isOpen: boolean;
@@ -27,6 +28,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, activeMenu, onMenuClic
     { id: 'promotions', label: 'Quản lý khuyến mãi', icon: Gift, href: '/admin/coupons' },
     { id: 'customers', label: 'Quản lý khách hàng', icon: Users, href: '/admin/users' },
     { id: 'reports', label: 'Dự đoán doanh thu', icon: FileText , href: '/admin/forecast'},
+    { id: 'stocks', label: 'Dự đoán tồn kho', icon: PackageSearch  , href: '/admin/inventory'},
     { id: 'settings', label: 'Cài đặt', icon: Settings, href: '/admin/settings' },
   ];
 

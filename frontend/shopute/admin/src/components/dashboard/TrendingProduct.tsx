@@ -79,10 +79,9 @@ export const TrendingProduct: React.FC = () => {
       {/* Nếu bạn có thêm giá trong DB thì hiển thị */}
       <div className="flex items-center justify-center gap-2">
         <span className="text-xl font-bold text-gray-800">
-          {(product.totalSold * 50000).toLocaleString('vi-VN')}đ
-        </span>
-        <span className="text-sm text-gray-400 line-through">
-          {((product.totalSold * 50000) * 1.1).toLocaleString('vi-VN')}đ
+          {product.price
+            ? `${Number(product.price).toLocaleString('vi-VN')}đ`
+            : '—'}
         </span>
       </div>
     </div>

@@ -86,7 +86,7 @@ export const BestSellingProducts: React.FC = () => {
 
               {/* Doanh thu (giả lập hoặc từ DB nếu có) */}
               <span className="font-semibold text-gray-800">
-                {(item.totalSold * 50000).toLocaleString('vi-VN')}₫
+                {(item.price).toLocaleString('vi-VN')}₫
               </span>
             </div>
           );
