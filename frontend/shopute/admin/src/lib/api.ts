@@ -1,6 +1,6 @@
-import { ApiError } from '@/types/auth';
+import { ApiError } from "@/types/auth";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081/api";
 
 class ApiClient {
   private baseURL: string;
@@ -25,25 +25,25 @@ class ApiClient {
     const url = `${this.baseURL}${endpoint}`;
 
     // Lazy-restore access token from localStorage on first use (client-side)
-    if (!this.accessToken && typeof window !== 'undefined') {
-      const t = window.localStorage?.getItem?.('access_token');
+    if (!this.accessToken && typeof window !== "undefined") {
+      const t = window.localStorage?.getItem?.("access_token");
       if (t) this.setAccessToken(t);
     }
-    
+
     const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...(options.headers as Record<string, string>),
+      "Content-Type": "application/json",
+      ...(options.headers as Record<string, string>),
     };
 
     if (this.accessToken) {
-      headers['Authorization'] = `Bearer ${this.accessToken}`;
+      headers["Authorization"] = `Bearer ${this.accessToken}`;
     }
 
     try {
       const response = await fetch(url, {
         ...options,
         headers,
-        credentials: 'include', 
+        credentials: "include",
       });
 
       if (!response.ok) {
@@ -55,12 +55,12 @@ class ApiClient {
       }
 
       // Parse body safely: allow empty body (e.g. PATCH/204)
-      const contentType = response.headers.get('content-type') || '';
+      const contentType = response.headers.get("content-type") || "";
       const text = await response.text();
       if (!text) {
         return undefined as T;
       }
-      if (contentType.includes('application/json')) {
+      if (contentType.includes("application/json")) {
         return JSON.parse(text) as T;
       }
       return text as unknown as T;
@@ -70,41 +70,59 @@ class ApiClient {
       }
       throw {
         statusCode: 500,
-        message: (error as Error).message || 'Network error',
+        message: (error as Error).message || "Network error",
       } as ApiError;
     }
   }
 
   async get<T>(endpoint: string, options?: RequestInit): Promise<T> {
-    return this.request<T>(endpoint, { ...options, method: 'GET' });
+    return this.request<T>(endpoint, { ...options, method: "GET" });
   }
 
-  async post<T>(endpoint: string, data?: any, options?: RequestInit): Promise<T> {
+  async post<T>(
+    endpoint: string,
+    data?: any,
+    options?: RequestInit
+  ): Promise<T> {
     return this.request<T>(endpoint, {
       ...options,
-      method: options?.method ?? 'POST',
+      method: options?.method ?? "POST",
       body: JSON.stringify(data),
     });
   }
 
-  async put<T>(endpoint: string, data?: any, options?: RequestInit): Promise<T> {
+  async put<T>(
+    endpoint: string,
+    data?: any,
+    options?: RequestInit
+  ): Promise<T> {
     return this.request<T>(endpoint, {
       ...options,
-      method: 'PUT',
+      method: "PUT",
       body: JSON.stringify(data),
     });
   }
 
-  async patch<T>(endpoint: string, data?: any, options?: RequestInit): Promise<T> {
+  async patch<T>(
+    endpoint: string,
+    data?: any,
+    options?: RequestInit
+  ): Promise<T> {
     return this.request<T>(endpoint, {
       ...options,
-      method: 'PATCH',
+      method: "PATCH",
       body: JSON.stringify(data),
     });
   }
 
   async delete<T>(endpoint: string, options?: RequestInit): Promise<T> {
-    return this.request<T>(endpoint, { ...options, method: 'DELETE' });
+    return this.request<T>(endpoint, { ...options, method: "DELETE" });
+  }
+
+  async getBlob(url: string): Promise<Blob> {
+    const res = await fetch(`${API_URL}${url}`);
+    if (!res.ok) throw new Error(await res.text());
+    return res.blob();
   }
 }
 

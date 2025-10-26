@@ -5,13 +5,20 @@ import {
   OneToMany,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 import { OrderDetail } from './order-detail.entity';
+import { User } from '../../users/entities/user.entity'; // 👈 import thêm
 
 @Entity('orders')
 export class Order {
   @PrimaryGeneratedColumn()
   id: number;
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'userId' }) // chỉ định cột khóa ngoại
+  user: User;
 
   @Column({ nullable: true })
   userId: number;

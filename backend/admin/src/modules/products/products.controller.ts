@@ -3,11 +3,13 @@ import {
   Get,
   Post,
   Body,
+  Query,
   Param,
   Patch,
   Delete,
   UseInterceptors,
   UploadedFile,
+  Res,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -15,10 +17,20 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+import type { Response } from 'express';
 
 @Controller('products')
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
+
+  @Get('export/csv')
+  async exportToCSV(@Res() res: Response) {
+    const csvBuffer = await this.productsService.exportToCSV();
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="products.csv"');
+    res.send(csvBuffer);
+  }
 
   @Post('upload')
   @UseInterceptors(
@@ -41,8 +53,13 @@ export class ProductsController {
   }
 
   @Get()
-  findAll() {
-    return this.productsService.findAll();
+  async findAll(
+    @Query('page') page = 1,
+    @Query('limit') limit = 7,
+    @Query('search') search = '',
+    @Query('sortBy') sortBy = 'Newest',
+  ) {
+    return this.productsService.findAll(+page, +limit, search, sortBy);
   }
 
   @Get(':id')
