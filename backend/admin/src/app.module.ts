@@ -15,7 +15,10 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { join } from 'path';
 @Module({
   imports: [
-    ConfigModule.forRoot(),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env', 
+    }),
     TypeOrmModule.forRoot({
       type: 'mysql',
       host: process.env.DB_HOST,

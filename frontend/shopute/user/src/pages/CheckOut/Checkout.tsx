@@ -7,14 +7,15 @@ import OrderSummary from "../../components/checkout/OrderSummary";
 import LoyaltyPointSection from "../../components/checkout/LoyaltyPointSection";
 import Layout from "../../layouts/MainLayout";
 import { useState } from "react";
-import { Voucher } from "../../types/voucher";
+import {Coupon } from "../../types/counpon";
 import { ShippingMethod as ShippingMethodType } from "../../types/shippingMethod";
 import { Address } from "../../types/address";
 import { useSelector } from "react-redux";
 import { RootState } from "../../store/store";
+import CouponSection from "../../components/checkout/VoucherSection";
 
 const Checkout = () => {
-  const [voucher, setVoucher] = useState<Voucher | null>(null);
+   const [coupon, setCoupon] = useState<Coupon | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<string>("COD");
   const [shippingMethod, setShippingMethod] = useState<ShippingMethodType | null>(null);
   const [address, setAddress] = useState<Address | null>(null);
@@ -123,7 +124,7 @@ const Checkout = () => {
                       </h2>
                     </div>
                     <div className="space-y-4">
-                      <VoucherSection onSelectVoucher={setVoucher} />
+                      <CouponSection onSelectCoupon={setCoupon} />
                       <LoyaltyPointSection 
                         availablePoints={availablePoints} 
                         onApplyPoints={setUsedPoints} 
@@ -137,7 +138,7 @@ const Checkout = () => {
               <div className="lg:col-span-1">
                <div className="sticky top-36">   
                   <OrderSummary
-                    voucher={voucher}
+                    coupon={coupon}
                     paymentMethod={paymentMethod}
                     shippingMethod={shippingMethod}
                     address={address}

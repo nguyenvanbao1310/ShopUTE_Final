@@ -36,10 +36,28 @@ export function useAuth() {
       return response;
     } catch (err) {
       const apiError = err as ApiError;
-      const message = Array.isArray(apiError.message)
-        ? apiError.message[0]
-        : apiError.message;
-      setError(message || 'Đăng nhập thất bại');
+      let message: string = 'Đăng nhập thất bại';
+
+      if (Array.isArray(apiError.message)) {
+        message = apiError.message[0];
+      } else if (typeof apiError.message === 'string') {
+        message = apiError.message;
+      }
+
+      // ✅ Nếu BE trả "Tài khoản chưa được xác thực" hoặc "OTP đã hết hạn"
+      if (
+        message.includes('OTP') ||
+        message.includes('xác thực') ||
+        message.includes('hết hạn')
+      ) {
+        setError(message);
+        // 👉 chuyển đến trang verify OTP
+        localStorage.setItem('pending_email', data.email);
+        setTimeout(() => router.push('/auth/verify'), 1000);
+        return;
+      }
+
+      setError(message);
       throw err;
     } finally {
       setLoading(false);
@@ -52,9 +70,8 @@ export function useAuth() {
       setError(null);
 
       const response = await authApi.register(data);
-      
-      // Sau khi đăng ký thành công, tự động đăng nhập
-     router.push('/auth/login');
+      localStorage.setItem('pending_email', data.email);
+     router.push('/auth/verify');
       
       return response;
     } catch (err) {
@@ -79,6 +96,25 @@ export function useAuth() {
       router.push('/login');
     }
   };
+  const verifyOtp = async (email: string, otp: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await authApi.verifyOtp(email, otp);
+      // ✅ Thành công → chuyển hướng login
+      setTimeout(() => router.push('/auth/login'), 1000);
+      return response;
+    } catch (err) {
+      const apiError = err as ApiError;
+      let message = 'Xác thực OTP thất bại';
+      if (Array.isArray(apiError.message)) message = apiError.message[0];
+      else if (typeof apiError.message === 'string') message = apiError.message;
+      setError(message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const refreshToken = async () => {
     try {
@@ -97,6 +133,22 @@ export function useAuth() {
       throw error;
     }
   };
+  const resendOtp = async (email: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await authApi.resendOtp(email);
+      return response;
+    }
+    catch (err) {
+      const apiError = err as ApiError;
+      let message = 'Gửi lại OTP thất bại';
+      if (Array.isArray(apiError.message)) message = apiError.message[0];
+      else if (typeof apiError.message === 'string') message = apiError.message;
+      setError(message);
+      throw err;
+    }
+  };
 
   return {
     user: state.user,
@@ -107,5 +159,7 @@ export function useAuth() {
     register,
     logout,
     refreshToken,
+    verifyOtp,
+    resendOtp,
   };
 }

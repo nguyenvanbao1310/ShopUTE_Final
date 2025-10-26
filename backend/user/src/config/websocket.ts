@@ -1,7 +1,13 @@
 import { Server as HTTPServer } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 
-const clients = new Map<number, WebSocket>();
+
+interface ClientInfo {
+  socket: WebSocket;
+  role: "user" | "admin";
+}
+
+const clients = new Map<number, ClientInfo>();
 
 export function initWebSocket(server: HTTPServer) {
   const wss = new WebSocketServer({ server, path: "/ws" }); 
@@ -13,28 +19,21 @@ export function initWebSocket(server: HTTPServer) {
     socket.on("message", (raw) => {
       try {
         const data = JSON.parse(raw.toString());
-        console.log("📩 Received:", data);
-        
         if (data.type === "register") {
-          // 🧹 Đóng socket cũ nếu user đã có connection
-          const oldSocket = clients.get(data.userId);
-          if (oldSocket && oldSocket !== socket && oldSocket.readyState === WebSocket.OPEN) {
-            console.log(`🔄 Closing old connection for user ${data.userId}`);
-            oldSocket.close();
+          const { userId, role } = data;
+          if (!userId || !role) return;
+
+          const old = clients.get(userId);
+          if (old?.socket && old.socket !== socket && old.socket.readyState === WebSocket.OPEN) {
+            old.socket.close();
           }
 
-          if (currentUserId !== null && currentUserId !== data.userId) {
-            clients.delete(currentUserId);
-          }
+          clients.set(userId, { socket, role });
+          currentUserId = userId;
 
-          currentUserId = data.userId;
-          clients.set(data.userId, socket);
-          console.log(`🟢 Registered user ${data.userId} (Total: ${clients.size})`);
-          
-          socket.send(JSON.stringify({ 
-            event: "registered", 
-            data: { userId: data.userId } 
-          }));
+          console.log(`🟢 Registered ${role} ${userId} (${clients.size} total)`);
+
+          socket.send(JSON.stringify({ event: "registered", data: { userId, role } }));
         }
       } catch (err) {
         console.error("❌ Invalid WS message:", err);
@@ -45,17 +44,14 @@ export function initWebSocket(server: HTTPServer) {
       console.error("❌ WebSocket error:", error);
     });
 
-    socket.on("close", () => {
-      if (currentUserId !== null) {
-        if (clients.get(currentUserId) === socket) {
-          clients.delete(currentUserId);
-          console.log(`🔴 User ${currentUserId} disconnected (Total: ${clients.size})`);
-        }
+     socket.on("close", () => {
+      if (currentUserId && clients.get(currentUserId)?.socket === socket) {
+        clients.delete(currentUserId);
+        console.log(`🔴 Disconnected ${currentUserId}`);
       }
     });
 
-    // ❤️ Heartbeat
-    const pingInterval = setInterval(() => {
+const pingInterval = setInterval(() => {
       if (socket.readyState === WebSocket.OPEN) {
         socket.ping();
       } else {
@@ -66,52 +62,42 @@ export function initWebSocket(server: HTTPServer) {
     socket.on("close", () => clearInterval(pingInterval));
   });
 
-  // 🧹 Cleanup dead connections
+  // 🧹 Dọn kết nối chết mỗi 60s
   setInterval(() => {
     let cleaned = 0;
-    for (const [userId, socket] of clients.entries()) {
-      if (socket.readyState !== WebSocket.OPEN) {
+    for (const [userId, client] of clients.entries()) {
+      if (client.socket.readyState !== WebSocket.OPEN) {
         clients.delete(userId);
         cleaned++;
       }
     }
-    if (cleaned > 0) {
-      console.log(`🧹 Cleaned ${cleaned} dead connections`);
-    }
+    if (cleaned > 0) console.log(`🧹 Cleaned ${cleaned} dead connections`);
   }, 60000);
 
   console.log("✅ WebSocket initialized");
   return wss;
 }
-
+/** 📩 Gửi sự kiện đến 1 user cụ thể */
 export function sendToUser(userId: number, event: string, payload: any) {
-  const socket = clients.get(userId);
-  if (socket && socket.readyState === WebSocket.OPEN) {
+  const client = clients.get(userId);
+  if (client?.socket.readyState === WebSocket.OPEN) {
     try {
-      socket.send(JSON.stringify({ event, data: payload }));
+      client.socket.send(JSON.stringify({ event, data: payload }));
       return true;
     } catch (err) {
       console.error(`❌ Failed to send to user ${userId}:`, err);
-      return false;
     }
   }
   return false;
 }
 
-export function broadcast(event: string, payload: any, excludeUserId?: number) {
+export function broadcastToRole(role: "user" | "admin", event: string, payload: any) {
   let sent = 0;
-  for (const [userId, socket] of clients.entries()) {
-    if (excludeUserId && userId === excludeUserId) continue;
-    
-    if (socket.readyState === WebSocket.OPEN) {
-      try {
-        socket.send(JSON.stringify({ event, data: payload }));
-        sent++;
-      } catch (err) {
-        console.error(`❌ Broadcast failed to user ${userId}`);
-      }
+  for (const [, client] of clients.entries()) {
+    if (client.role === role && client.socket.readyState === WebSocket.OPEN) {
+      client.socket.send(JSON.stringify({ event, data: payload }));
+      sent++;
     }
   }
-  console.log(`📢 Broadcasted to ${sent} clients`);
-  return sent;
+  console.log(`📢 Broadcasted to ${sent} ${role}s`);
 }
