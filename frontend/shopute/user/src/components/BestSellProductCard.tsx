@@ -5,6 +5,8 @@ import { wishlistApi } from "../apis/wishlistApi";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "../store/store";
 
+const IMAGE_BASE_URL = process.env.REACT_APP_API_IMAGE_URL;
+
 interface Category {
   id: number;
   name: string;
@@ -23,9 +25,10 @@ interface Product {
 
 const BestSellProductCard: FC<{ product: Product }> = ({ product }) => {
   const [liked, setLiked] = useState(false);
-  const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
+  const isAuthenticated = useSelector(
+    (state: RootState) => state.auth.isAuthenticated
+  );
   useEffect(() => {
-    
     if (!isAuthenticated) return;
     const checkWishlist = async () => {
       try {
@@ -80,7 +83,7 @@ const BestSellProductCard: FC<{ product: Product }> = ({ product }) => {
       <Link to={`/product/${product.id}`}>
         {/* Ảnh sản phẩm */}
         <img
-          src={product.thumbnailUrl}
+          src={`${IMAGE_BASE_URL}/${product.thumbnailUrl}`}
           alt={product.name}
           className="w-full h-32 object-contain"
         />

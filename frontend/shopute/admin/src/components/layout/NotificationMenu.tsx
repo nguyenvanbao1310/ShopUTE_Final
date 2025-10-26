@@ -1,12 +1,19 @@
-'use client';
-
+"use client";
 import React, { useEffect, useRef } from 'react';
 import { Bell } from 'lucide-react';
 import { useOrderNotifications } from '@/hooks/notification';
 import Link from 'next/link';
 
 export function NotificationMenu() {
-  const { open, items, unread, loading, toggleOpen, fetchNotifications, setOpen } = useOrderNotifications();
+  const {
+    open,
+    items,
+    unread,
+    loading,
+    toggleOpen,
+    fetchNotifications,
+    setOpen,
+  } = useOrderNotifications();
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -16,9 +23,9 @@ export function NotificationMenu() {
       setOpen(false);
     }
     if (open) {
-      document.addEventListener('mousedown', onClickOutside);
+      document.addEventListener("mousedown", onClickOutside);
     }
-    return () => document.removeEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
   }, [open, setOpen]);
 
   return (
@@ -32,20 +39,29 @@ export function NotificationMenu() {
         aria-label="Notifications"
       >
         <Bell size={20} className="text-gray-600" />
-        {unread > 0 && <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />}
+        {unread > 0 && (
+          <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+        )}
       </button>
       {open && (
         <div className="absolute right-0 mt-2 w-96 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
           <div className="px-4 py-3 border-b flex items-center justify-between">
             <span className="font-semibold">Thông báo đơn hàng</span>
-            <button className="text-sm text-blue-600 hover:underline" onClick={() => fetchNotifications()}>
+            <button
+              className="text-sm text-blue-600 hover:underline"
+              onClick={() => fetchNotifications()}
+            >
               Làm mới
             </button>
           </div>
           <div className="max-h-96 overflow-y-auto">
-            {loading && <div className="p-4 text-sm text-gray-500">Đang tải...</div>}
+            {loading && (
+              <div className="p-4 text-sm text-gray-500">Đang tải...</div>
+            )}
             {!loading && items.length === 0 && (
-              <div className="p-4 text-sm text-gray-500">Không có thông báo</div>
+              <div className="p-4 text-sm text-gray-500">
+                Không có thông báo
+              </div>
             )}
             {!loading &&
               items.map((n) => (

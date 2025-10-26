@@ -20,7 +20,11 @@ import MainLayout from "../../layouts/MainLayout";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch } from "../../store/store";
 import { addToCart } from "../../store/cartSlice";
-import { createProductRating, fetchProductRatings, updateRating } from "../../apis/rating";
+import {
+  createProductRating,
+  fetchProductRatings,
+  updateRating,
+} from "../../apis/rating";
 import { viewedApi } from "../../apis/viewedApi";
 import RatingSection from "./RatingSection";
 
@@ -69,13 +73,18 @@ const ProductDetail: FC = () => {
   const [rewardType, setRewardType] = useState<"points" | "coupon">("points");
   const [submitMsg, setSubmitMsg] = useState<string>("");
   const [menuOpenId, setMenuOpenId] = useState<number | null>(null);
-  const [editing, setEditing] = useState<{ id: number; rating: number; comment: string } | null>(null);
+  const [editing, setEditing] = useState<{
+    id: number;
+    rating: number;
+    comment: string;
+  } | null>(null);
 
   const { id } = useParams<{ id: string }>();
   const dispatch = useDispatch<AppDispatch>();
   const isAuthenticated = useSelector((s: any) => s?.auth?.isAuthenticated);
   const currentUserId = useSelector((s: any) => s?.auth?.user?.id);
   const viewedAdded = useRef(false);
+  const IMAGE_BASE_URL = process.env.REACT_APP_API_IMAGE_URL;
 
   useEffect(() => {
     axios
@@ -155,7 +164,10 @@ const ProductDetail: FC = () => {
   const onSaveEdit = async () => {
     if (!editing) return;
     try {
-      await updateRating(editing.id, { rating: editing.rating, comment: editing.comment });
+      await updateRating(editing.id, {
+        rating: editing.rating,
+        comment: editing.comment,
+      });
       setEditing(null);
       await refreshRatings();
     } catch (e) {
@@ -179,7 +191,6 @@ const ProductDetail: FC = () => {
       ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length
       : 0;
   const colors = ["Black", "Silver", "Gold"];
- 
 
   return (
     <MainLayout>
@@ -222,7 +233,7 @@ const ProductDetail: FC = () => {
                           alt={product.name}
                           className="w-full h-full object-contain"
                           onError={(e) => {
-                            e.currentTarget.src = product.thumbnailUrl;
+                            e.currentTarget.src = `${IMAGE_BASE_URL}/${product.thumbnailUrl}`;
                           }}
                         />
                       </SwiperSlide>
@@ -247,7 +258,7 @@ const ProductDetail: FC = () => {
                         alt={product.name}
                         className="w-16 h-16 object-cover cursor-pointer border rounded hover:border-blue-500"
                         onError={(e) => {
-                          e.currentTarget.src = product.thumbnailUrl;
+                          e.currentTarget.src = `${IMAGE_BASE_URL}/${product.thumbnailUrl}`;
                         }}
                       />
                     ))
@@ -436,8 +447,6 @@ const ProductDetail: FC = () => {
                   </div>
                 </div>
 
-                
-
                 <div className="border-t border-gray-200 pt-6">
                   <div className="flex items-center justify-between">
                     <h3 className="font-semibold text-lg flex items-center">
@@ -461,14 +470,14 @@ const ProductDetail: FC = () => {
             </div>
           </div>
           {/* New Rating Section Component (extracted) */}
-            <div className="mt-6">
-              <RatingSection productId={product.id} />
-            </div>
+          <div className="mt-6">
+            <RatingSection productId={product.id} />
+          </div>
           {/* Similar Products */}
-            <SimilarProducts
-              productId={product.id}
-              categoryId={product.categoryId}
-            />
+          <SimilarProducts
+            productId={product.id}
+            categoryId={product.categoryId}
+          />
         </div>
       </div>
     </MainLayout>
