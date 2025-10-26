@@ -1,6 +1,5 @@
 import apiClient from "./api";
 
-
 export type RevenueResponse = {
   currentRevenue: number;
   trend: string;
@@ -19,7 +18,8 @@ export type ForecastResponse = {
 export type TopProduct = {
   id: number;
   name: string;
-    imageUrl?: string;
+  price: number;
+  imageUrl?: string;
   totalSold: number;
 };
 export type LocationSales = {
@@ -46,7 +46,7 @@ export const analyticsApi = {
   async getTopProducts(): Promise<TopProduct[]> {
     return apiClient.get<TopProduct[]>("/analytics/top-products");
   },
-   async getSalesByLocation(): Promise<LocationSales[]> {
+  async getSalesByLocation(): Promise<LocationSales[]> {
     return apiClient.get<LocationSales[]>("/analytics/sales-by-location");
   },
   async getForecast(): Promise<ForecastResponse> {

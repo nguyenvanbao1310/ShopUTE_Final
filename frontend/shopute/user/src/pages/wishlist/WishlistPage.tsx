@@ -18,6 +18,7 @@ interface Product {
 const WishlistPage: FC = () => {
   const [wishlist, setWishlist] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const IMAGE_BASE_URL = process.env.REACT_APP_API_IMAGE_URL;
 
   const fetchWishlist = async () => {
     try {
@@ -94,7 +95,7 @@ const WishlistPage: FC = () => {
                     className="flex justify-center"
                   >
                     <img
-                      src={product.thumbnailUrl}
+                      src={`${IMAGE_BASE_URL}/${product.thumbnailUrl}`}
                       alt={product.name}
                       className="w-40 h-40 object-contain rounded-lg transition-transform hover:scale-105"
                     />

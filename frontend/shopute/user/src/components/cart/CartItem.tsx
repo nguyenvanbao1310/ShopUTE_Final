@@ -1,7 +1,12 @@
 import React from "react";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "../../store/store";
-import { CartItemDTO, removeCartItem, toggleSelectItem, updateCartItem } from "../../store/cartSlice";
+import {
+  CartItemDTO,
+  removeCartItem,
+  toggleSelectItem,
+  updateCartItem,
+} from "../../store/cartSlice";
 import { Link } from "react-router-dom";
 
 type Props = {
@@ -9,6 +14,8 @@ type Props = {
 };
 
 const CartItem: React.FC<Props> = ({ item }) => {
+  const IMAGE_BASE_URL = process.env.REACT_APP_API_IMAGE_URL;
+
   const dispatch = useDispatch<AppDispatch>();
 
   const onToggle = (checked: boolean) => {
@@ -38,9 +45,12 @@ const CartItem: React.FC<Props> = ({ item }) => {
         onChange={(e) => onToggle(e.target.checked)}
       />
 
-      <Link to={`/product/${item.productId}`} className="w-20 h-20 flex-shrink-0">
+      <Link
+        to={`/product/${item.productId}`}
+        className="w-20 h-20 flex-shrink-0"
+      >
         <img
-          src={item.imageUrl || "/placeholder.png"}
+          src={`${IMAGE_BASE_URL}/${item.imageUrl}`}
           alt={item.name}
           className="w-20 h-20 object-cover rounded"
           loading="lazy"
@@ -48,7 +58,10 @@ const CartItem: React.FC<Props> = ({ item }) => {
       </Link>
 
       <div className="flex-1 min-w-0">
-        <Link to={`/product/${item.productId}`} className="line-clamp-2 font-medium hover:underline">
+        <Link
+          to={`/product/${item.productId}`}
+          className="line-clamp-2 font-medium hover:underline"
+        >
           {item.name}
         </Link>
 
@@ -57,11 +70,18 @@ const CartItem: React.FC<Props> = ({ item }) => {
         </div>
 
         <div className="mt-2 flex items-center gap-2">
-          <button className="px-2 py-1 border rounded" onClick={onDec}>−</button>
+          <button className="px-2 py-1 border rounded" onClick={onDec}>
+            −
+          </button>
           <span className="w-8 text-center">{item.quantity}</span>
-          <button className="px-2 py-1 border rounded" onClick={onInc}>＋</button>
+          <button className="px-2 py-1 border rounded" onClick={onInc}>
+            ＋
+          </button>
 
-          <button className="ml-4 text-sm text-gray-500 hover:text-red-600" onClick={onRemove}>
+          <button
+            className="ml-4 text-sm text-gray-500 hover:text-red-600"
+            onClick={onRemove}
+          >
             Xoá
           </button>
         </div>

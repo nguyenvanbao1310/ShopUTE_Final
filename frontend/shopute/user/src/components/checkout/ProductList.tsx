@@ -4,6 +4,7 @@ import { selectSelectedItems } from "../../store/cartSlice";
 
 const ProductList = () => {
   const items = useSelector(selectSelectedItems) as CartItemDTO[];
+  const IMAGE_BASE_URL = process.env.REACT_APP_API_IMAGE_URL;
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
@@ -41,7 +42,7 @@ const ProductList = () => {
               {/* Hình ảnh */}
               <div className="flex-shrink-0">
                 <img
-                  src={item.imageUrl}
+                  src={`${IMAGE_BASE_URL}/${item.imageUrl}`}
                   alt={item.name}
                   className="w-16 h-16 object-cover rounded-lg"
                 />
@@ -81,7 +82,8 @@ const ProductList = () => {
             <span className="text-xl font-bold text-blue-600">
               {items
                 .reduce((sum, item) => sum + item.price * item.quantity, 0)
-                .toLocaleString()}₫
+                .toLocaleString()}
+              ₫
             </span>
           </div>
         </div>

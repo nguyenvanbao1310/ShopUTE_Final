@@ -48,6 +48,8 @@ interface PaginationInfo {
 // 🔹 Component
 // ===============================
 const CategoryPage: FC = () => {
+  const IMAGE_BASE_URL = process.env.REACT_APP_API_IMAGE_URL;
+
   const dispatch = useDispatch<AppDispatch>();
   const { categoryName = "" } = useParams<{ categoryName: string }>();
 
@@ -353,7 +355,7 @@ const CategoryPage: FC = () => {
                     >
                       <Link to={`/product/${product.id}`}>
                         <img
-                          src={product.thumbnailUrl}
+                          src={`${IMAGE_BASE_URL}/${product.thumbnailUrl}`}
                           alt={product.name}
                           className="w-full h-48 object-contain"
                         />

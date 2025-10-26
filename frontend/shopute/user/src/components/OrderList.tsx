@@ -45,6 +45,8 @@ const formatDateTime = (dateString: string) => {
 };
 
 export default function OrderList() {
+  const IMAGE_BASE_URL = process.env.REACT_APP_API_IMAGE_URL;
+
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 
@@ -159,16 +161,19 @@ export default function OrderList() {
     (new Date().getTime() - new Date(order.createdAt).getTime()) / 1000 / 60 <
       30;
 
-  const filteredOrders = filterStatus === "ALL" 
-    ? orders 
-    : orders.filter(order => order.status === filterStatus);
+  const filteredOrders =
+    filterStatus === "ALL"
+      ? orders
+      : orders.filter((order) => order.status === filterStatus);
 
   return (
     <Layout>
       <div className="p-4 md:p-6 space-y-6 bg-gray-50 min-h-screen">
         <div className="max-w-6xl mx-auto">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-4">Đơn hàng của tôi</h1>
-          
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-4">
+            Đơn hàng của tôi
+          </h1>
+
           {/* Status Filter */}
           <div className="bg-white rounded-lg shadow-sm p-3 mb-4">
             <div className="flex items-center gap-2 overflow-x-auto">
@@ -185,7 +190,7 @@ export default function OrderList() {
                   {filter.label}
                   {filter.key !== "ALL" && (
                     <span className="ml-1.5 text-xs">
-                      ({orders.filter(o => o.status === filter.key).length})
+                      ({orders.filter((o) => o.status === filter.key).length})
                     </span>
                   )}
                   {filter.key === "ALL" && (
@@ -195,7 +200,7 @@ export default function OrderList() {
               ))}
             </div>
           </div>
-          
+
           {loading ? (
             <div className="flex justify-center items-center py-20">
               <div className="text-center">
@@ -207,9 +212,11 @@ export default function OrderList() {
             <div className="bg-white rounded-xl shadow-md p-12 text-center">
               <div className="text-6xl mb-4">📦</div>
               <p className="text-gray-500 text-lg">
-                {filterStatus === "ALL" 
-                  ? "Chưa có đơn hàng nào." 
-                  : `Không có đơn hàng nào ở trạng thái "${STATUS_FILTERS.find(f => f.key === filterStatus)?.label}".`}
+                {filterStatus === "ALL"
+                  ? "Chưa có đơn hàng nào."
+                  : `Không có đơn hàng nào ở trạng thái "${
+                      STATUS_FILTERS.find((f) => f.key === filterStatus)?.label
+                    }".`}
               </p>
             </div>
           ) : (
@@ -265,12 +272,9 @@ export default function OrderList() {
                 {/* Compact Products List */}
                 <div className="mt-3 space-y-2">
                   {order.OrderDetails.map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex items-center gap-3 py-2"
-                    >
+                    <div key={item.id} className="flex items-center gap-3 py-2">
                       <img
-                        src={item.Product.thumbnailUrl}
+                        src={`${IMAGE_BASE_URL}/${item.Product.thumbnailUrl}`}
                         alt={item.Product.name}
                         className="w-12 h-12 object-cover rounded border border-gray-200"
                       />
@@ -322,14 +326,6 @@ export default function OrderList() {
                       Yêu cầu hủy
                     </button>
                   )}
-                  {order.status === "PENDING" && (
-                    <button
-                      className="px-4 py-1.5 bg-green-500 text-white rounded hover:bg-green-600 transition-colors text-sm font-medium"
-                      onClick={() => handlePayCOD(order.id)}
-                    >
-                      Thanh toán COD
-                    </button>
-                  )}
                 </div>
 
                 {/* Expanded Details */}
@@ -345,31 +341,50 @@ export default function OrderList() {
                         <div className="space-y-1.5 text-sm">
                           <div className="flex justify-between">
                             <span className="text-gray-600">Tạm tính:</span>
-                            <span className="font-medium">{formatCurrency(order.totalAmount)}</span>
+                            <span className="font-medium">
+                              {formatCurrency(order.totalAmount)}
+                            </span>
                           </div>
                           {(order.discountAmount ?? 0) > 0 && (
                             <div className="flex justify-between text-green-600">
                               <span>Giảm giá (Coupon):</span>
-                              <span className="font-medium">-{formatCurrency(order.discountAmount ?? 0)}</span>
+                              <span className="font-medium">
+                                -{formatCurrency(order.discountAmount ?? 0)}
+                              </span>
                             </div>
                           )}
                           {(order.usedPoints ?? 0) > 0 && (
                             <div className="flex justify-between text-purple-600">
-                              <span>Điểm thưởng ({order.usedPoints} điểm):</span>
-                              <span className="font-medium">-{formatCurrency(order.pointsDiscountAmount ?? 0)}</span>
+                              <span>
+                                Điểm thưởng ({order.usedPoints} điểm):
+                              </span>
+                              <span className="font-medium">
+                                -
+                                {formatCurrency(
+                                  order.pointsDiscountAmount ?? 0
+                                )}
+                              </span>
                             </div>
                           )}
                           {(order.shippingFee ?? 0) > 0 && (
                             <div className="flex justify-between">
-                              <span className="text-gray-600">Phí vận chuyển:</span>
-                              <span className="font-medium">{formatCurrency(order.shippingFee ?? 0)}</span>
+                              <span className="text-gray-600">
+                                Phí vận chuyển:
+                              </span>
+                              <span className="font-medium">
+                                {formatCurrency(order.shippingFee ?? 0)}
+                              </span>
                             </div>
                           )}
                           <div className="pt-1.5 border-t border-gray-300">
                             <div className="flex justify-between items-center">
-                              <span className="font-bold text-gray-800">Tổng cộng:</span>
+                              <span className="font-bold text-gray-800">
+                                Tổng cộng:
+                              </span>
                               <span className="font-bold text-lg text-blue-600">
-                                {formatCurrency(order.finalAmount ?? order.totalAmount)}
+                                {formatCurrency(
+                                  order.finalAmount ?? order.totalAmount
+                                )}
                               </span>
                             </div>
                           </div>
@@ -383,21 +398,37 @@ export default function OrderList() {
                         </h3>
                         <div className="space-y-1.5 text-sm">
                           <div>
-                            <div className="text-xs text-gray-500">Phương thức thanh toán</div>
-                            <div className="font-medium text-gray-800">{order.paymentMethod}</div>
+                            <div className="text-xs text-gray-500">
+                              Phương thức thanh toán
+                            </div>
+                            <div className="font-medium text-gray-800">
+                              {order.paymentMethod}
+                            </div>
                           </div>
                           <div>
-                            <div className="text-xs text-gray-500">Địa chỉ giao hàng</div>
-                            <div className="font-medium text-gray-800">{order.deliveryAddress}</div>
+                            <div className="text-xs text-gray-500">
+                              Địa chỉ giao hàng
+                            </div>
+                            <div className="font-medium text-gray-800">
+                              {order.deliveryAddress}
+                            </div>
                           </div>
                           <div className="grid grid-cols-2 gap-2 pt-1">
                             <div>
-                              <div className="text-xs text-gray-500">Ngày tạo</div>
-                              <div className="text-xs font-medium">{formatDateTime(order.createdAt)}</div>
+                              <div className="text-xs text-gray-500">
+                                Ngày tạo
+                              </div>
+                              <div className="text-xs font-medium">
+                                {formatDateTime(order.createdAt)}
+                              </div>
                             </div>
                             <div>
-                              <div className="text-xs text-gray-500">Cập nhật</div>
-                              <div className="text-xs font-medium">{formatDateTime(order.updatedAt)}</div>
+                              <div className="text-xs text-gray-500">
+                                Cập nhật
+                              </div>
+                              <div className="text-xs font-medium">
+                                {formatDateTime(order.updatedAt)}
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -408,9 +439,13 @@ export default function OrderList() {
                     <div className="flex flex-wrap gap-2">
                       {order.shippingMethod && (
                         <div className="bg-blue-50 border border-blue-200 rounded px-3 py-2 text-sm">
-                          <span className="text-blue-700">🚚 {order.shippingMethod.name}</span>
+                          <span className="text-blue-700">
+                            🚚 {order.shippingMethod.name}
+                          </span>
                           {order.shippingMethod.estimatedDays && (
-                            <span className="text-gray-600 ml-2">• {order.shippingMethod.estimatedDays}</span>
+                            <span className="text-gray-600 ml-2">
+                              • {order.shippingMethod.estimatedDays}
+                            </span>
                           )}
                         </div>
                       )}
@@ -418,13 +453,17 @@ export default function OrderList() {
                       {order.coupon && (
                         <div className="bg-green-50 border border-green-200 rounded px-3 py-2 text-sm">
                           <span className="text-green-700">🎟️ Mã: </span>
-                          <span className="font-mono font-bold text-green-800">{order.coupon.code}</span>
+                          <span className="font-mono font-bold text-green-800">
+                            {order.coupon.code}
+                          </span>
                         </div>
                       )}
 
                       {(order.usedPoints ?? 0) > 0 && (
                         <div className="bg-purple-50 border border-purple-200 rounded px-3 py-2 text-sm">
-                          <span className="text-purple-700">⭐ Dùng {order.usedPoints} điểm</span>
+                          <span className="text-purple-700">
+                            ⭐ Dùng {order.usedPoints} điểm
+                          </span>
                         </div>
                       )}
                     </div>
@@ -435,13 +474,17 @@ export default function OrderList() {
                         <h3 className="font-semibold text-yellow-800 text-sm mb-1">
                           📝 Ghi chú
                         </h3>
-                        <p className="text-sm text-gray-700 italic">{order.note}</p>
+                        <p className="text-sm text-gray-700 italic">
+                          {order.note}
+                        </p>
                       </div>
                     )}
 
                     {/* Progress Details */}
                     <div className="bg-gray-50 rounded-lg p-3">
-                      <h3 className="font-semibold text-gray-700 text-sm mb-2">Tiến trình đơn hàng</h3>
+                      <h3 className="font-semibold text-gray-700 text-sm mb-2">
+                        Tiến trình đơn hàng
+                      </h3>
                       <div className="grid grid-cols-7 gap-1 text-xs text-center">
                         {STATUS_ORDER.map((s) => (
                           <div
@@ -452,9 +495,12 @@ export default function OrderList() {
                                 : "text-gray-500"
                             }`}
                           >
-                            {s.replace("_", " ").split(" ").map((word, i) => (
-                              <div key={i}>{word}</div>
-                            ))}
+                            {s
+                              .replace("_", " ")
+                              .split(" ")
+                              .map((word, i) => (
+                                <div key={i}>{word}</div>
+                              ))}
                           </div>
                         ))}
                       </div>
