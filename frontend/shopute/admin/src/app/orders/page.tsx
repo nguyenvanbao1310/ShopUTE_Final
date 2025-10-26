@@ -258,53 +258,109 @@ export default function OrdersPage() {
                     >
                       📄 Xuất PDF
                     </button>
+                    {/* Nút chuyển trạng thái động */}
+                    {selectedOrder.status === "CONFIRMED" && (
+                      <button
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                        onClick={async () => {
+                          if (
+                            !confirm(
+                              "Chuyển đơn hàng sang 'Đang chuẩn bị hàng'?"
+                            )
+                          )
+                            return;
+                          await orderApi.updateStatus(
+                            selectedOrder.id,
+                            "PREPARING"
+                          );
+                          setSelectedOrder({
+                            ...selectedOrder,
+                            status: "PREPARING",
+                          });
+                          alert("✅ Đã chuyển sang 'Đang chuẩn bị hàng'");
+                        }}
+                      >
+                        📦 Chuẩn bị hàng
+                      </button>
+                    )}
+
+                    {selectedOrder.status === "PREPARING" && (
+                      <button
+                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+                        onClick={async () => {
+                          if (!confirm("Chuyển sang 'Đang giao hàng'?")) return;
+                          await orderApi.updateStatus(
+                            selectedOrder.id,
+                            "SHIPPED"
+                          );
+                          setSelectedOrder({
+                            ...selectedOrder,
+                            status: "SHIPPED",
+                          });
+                          alert("🚚 Đơn hàng đã chuyển sang 'Đang giao hàng'");
+                        }}
+                      >
+                        🚚 Giao hàng
+                      </button>
+                    )}
+
+                    {selectedOrder.status === "SHIPPED" && (
+                      <button
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+                        onClick={async () => {
+                          if (!confirm("Hoàn tất đơn hàng này?")) return;
+                          await orderApi.updateStatus(
+                            selectedOrder.id,
+                            "COMPLETED"
+                          );
+                          setSelectedOrder({
+                            ...selectedOrder,
+                            status: "COMPLETED",
+                          });
+                          alert("🎉 Đơn hàng đã hoàn tất!");
+                        }}
+                      >
+                        🎉 Hoàn tất
+                      </button>
+                    )}
+
                     {selectedOrder.status === "CANCEL_REQUESTED" && (
                       <div className="flex gap-3">
                         <button
                           className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
                           onClick={async () => {
-                            if (!confirm("Xác nhận hủy đơn hàng này?")) return;
-                            try {
-                              await orderApi.updateStatus(
-                                selectedOrder.id,
-                                "CANCELLED"
-                              );
-                              alert("✅ Đã hủy đơn hàng thành công!");
-                              setSelectedOrder({
-                                ...selectedOrder,
-                                status: "CANCELLED",
-                              });
-                            } catch (err) {
-                              console.error(err);
-                              alert("❌ Lỗi khi hủy đơn hàng");
-                            }
+                            if (!confirm("Xác nhận hủy đơn hàng?")) return;
+                            await orderApi.updateStatus(
+                              selectedOrder.id,
+                              "CANCELLED"
+                            );
+                            setSelectedOrder({
+                              ...selectedOrder,
+                              status: "CANCELLED",
+                            });
+                            alert("✅ Đơn hàng đã bị hủy");
                           }}
                         >
-                          ❌ Xác nhận hủy đơn
+                          ❌ Xác nhận hủy
                         </button>
 
                         <button
                           className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition"
                           onClick={async () => {
-                            if (!confirm("Từ chối yêu cầu hủy đơn hàng này?"))
+                            if (!confirm("Từ chối yêu cầu hủy đơn này?"))
                               return;
-                            try {
-                              await orderApi.updateStatus(
-                                selectedOrder.id,
-                                "CONFIRMED"
-                              );
-                              alert("✅ Đã từ chối yêu cầu hủy!");
-                              setSelectedOrder({
-                                ...selectedOrder,
-                                status: "CONFIRMED",
-                              });
-                            } catch (err) {
-                              console.error(err);
-                              alert("❌ Lỗi khi cập nhật trạng thái");
-                            }
+                            await orderApi.updateStatus(
+                              selectedOrder.id,
+                              "CONFIRMED"
+                            );
+                            setSelectedOrder({
+                              ...selectedOrder,
+                              status: "CONFIRMED",
+                            });
+                            alert("↩️ Đã từ chối yêu cầu hủy");
                           }}
                         >
-                          ↩️ Từ chối yêu cầu hủy
+                          ↩️ Từ chối hủy
                         </button>
                       </div>
                     )}
@@ -391,7 +447,8 @@ export default function OrdersPage() {
                         // const vat = Math.round(
                         //   (subTotal - discount + shipping) * 0.03
                         // ); // 3%
-                        const grandTotal = subTotal - discount + shipping - pointsDiscount;
+                        const grandTotal =
+                          subTotal - discount + shipping - pointsDiscount;
 
                         return (
                           <>
@@ -406,7 +463,9 @@ export default function OrdersPage() {
                                 : "0₫"}
                             </p>
                             <p>
-                              <span className="font-medium">Giảm tiền từ điểm thưởng:</span>{" "}
+                              <span className="font-medium">
+                                Giảm tiền từ điểm thưởng:
+                              </span>{" "}
                               {pointsDiscount > 0
                                 ? `-${pointsDiscount.toLocaleString("vi-VN")}₫`
                                 : "0₫"}
