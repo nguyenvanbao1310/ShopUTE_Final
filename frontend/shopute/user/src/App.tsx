@@ -44,7 +44,11 @@ function WebSocketManager({ addNotification }: { addNotification: (notif: any) =
     [addNotification]
   );
 
-  useWebSocket(isAuthenticated ? user?.id ?? null : null, handleWsMessage);
+   useWebSocket(
+    isAuthenticated ? user?.id ?? null : null,
+    isAuthenticated ? user?.role ?? "user" : null, // 🟢 thêm role
+    handleWsMessage
+  );
   return null; // không render gì
 }
 

@@ -11,7 +11,8 @@ import CancelRequest from "../models/CancelRequest";
 import Coupon from "../models/Coupon";
 import ShippingMethod from "../models/ShippingMethod";
 import { createNotification } from "../services/notificationService";
-
+import { broadcastToRole , sendToUser} from "../config/websocket";
+import {CreateNotificationParams} from "./notificationService";
 export interface CreateOrderInput {
   userId?: number;
   code: string;
@@ -132,28 +133,39 @@ export async function createOrder(data: CreateOrderInput) {
     await OrderDetail.bulkCreate(details, { transaction: t });
     await t.commit();
     if (data.userId) {
-    const user = await User.findByPk(data.userId);
-      await createNotification({
-      receiverId: data.userId,
-      receiverRole: "user",
-      type: "ORDER",
-      title: "🛍️ Đơn hàng mới tạo",
-      message: `Bạn vừa đặt đơn hàng #${order.code} thành công.`,
-      actionUrl: `/orders/${order.id}`,
-      sendEmail: true,
-    });
-    const admin = await User.findOne({ where: { role: "admin" } });
-    if (admin) {
-      await createNotification({
-        receiverId: admin.id,
+      const user = await User.findByPk(data.userId);
+
+      const payloadUser = {
+        receiverId: data.userId,
+        receiverRole: "user",
+        type: "ORDER",
+        title: "🛍️ Đơn hàng mới tạo",
+        message: `Bạn vừa đặt đơn hàng #${order.code} thành công.`,
+        actionUrl: `/orders/${order.id}`,
+        sendEmail: true,
+      } as CreateNotificationParams;
+
+      const payloadAdmin = {
         receiverRole: "admin",
         type: "ORDER",
         title: "🧾 Đơn hàng mới",
-        message: `${user?.firstName || "Khách hàng"} vừa đặt đơn hàng #${order.code}.`,
+        message: `${user?.firstName || "Khách hàng"} ${user?.lastName || ""} vừa đặt đơn hàng #${order.code}.`,
         actionUrl: `/admin/orders/${order.id}`,
         sendEmail: true,
-      });
-    }
+      } as CreateNotificationParams;
+
+      // 🟢 1. Gửi WS ngay cho cả hai
+      sendToUser(data.userId, "NEW_NOTIFICATION", payloadUser);
+      broadcastToRole("admin", "NEW_NOTIFICATION", payloadAdmin);
+
+      // 🟢 2. Ghi DB song song, không chặn WS
+      const admins = await User.findAll({ where: { role: "admin" } });
+      await Promise.all([
+        createNotification(payloadUser),
+        ...admins.map((a) =>
+          createNotification({ ...payloadAdmin, receiverId: a.id })
+        ),
+      ]);
 }
     return { order, details };
   } catch (error) {
