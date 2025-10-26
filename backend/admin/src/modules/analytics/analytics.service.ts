@@ -5,6 +5,7 @@ import { Order } from '../orders/entities/order.entity';
 import { OrderDetail } from '../orders/entities/order-detail.entity';
 import { User } from 'src/modules/users/entities/user.entity';
 import { Product } from '../products/entities/product.entity';
+import axios from 'axios';
 
 @Injectable()
 export class AnalyticsService {
@@ -225,6 +226,25 @@ async getSalesByLocation() {
     percent: Number(row.percent) || 0,
   }));
 }
+ // 📈 Dự đoán doanh thu (AI Prophet)
+  async getRevenueForecast() {
+    // 1️⃣ Lấy doanh thu từng tháng
+    const data = await this.orderRepo.query(`
+      SELECT DATE_FORMAT(createdAt, '%Y-%m') AS month,
+             SUM(finalAmount) AS revenue
+      FROM orders
+      WHERE status IN ('COMPLETED', 'SHIPPED')
+      GROUP BY DATE_FORMAT(createdAt, '%Y-%m')
+      ORDER BY month;
+    `);
 
+    // 2️⃣ Gọi Flask service
+    const res = await axios.post('http://127.0.0.1:5001/forecast', data);
+
+    return {
+      history: data,
+      forecast: res.data,
+    };
+  }
 
 }
