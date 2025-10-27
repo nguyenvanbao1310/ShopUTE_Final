@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { ProductsModule } from './modules/products/product.module';
+import { CategoriesModule } from './modules/categories/category.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { CouponsModule } from './modules/coupons/coupons.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
@@ -18,7 +19,7 @@ import { StoreSettingsModule } from './modules/store-settings/store-settings.mod
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: '.env', 
+      envFilePath: '.env',
     }),
     TypeOrmModule.forRoot({
       type: 'mysql',
@@ -31,6 +32,7 @@ import { StoreSettingsModule } from './modules/store-settings/store-settings.mod
       synchronize: false,
     }),
     ProductsModule,
+    CategoriesModule,
     OrdersModule,
     CouponsModule,
     NotificationsModule,

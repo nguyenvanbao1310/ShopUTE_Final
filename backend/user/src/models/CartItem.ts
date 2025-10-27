@@ -10,21 +10,33 @@ export interface CartItemAttrs {
   createdAt?: Date;
   updatedAt?: Date;
 }
-type CartItemCreation = Optional<CartItemAttrs, "id" | "selected" | "createdAt" | "updatedAt">;
+type CartItemCreation = Optional<
+  CartItemAttrs,
+  "id" | "selected" | "createdAt" | "updatedAt"
+>;
 
-class CartItem extends Model<CartItemAttrs, CartItemCreation> implements CartItemAttrs {
+class CartItem
+  extends Model<CartItemAttrs, CartItemCreation>
+  implements CartItemAttrs
+{
   public id!: number;
   public cartId!: number;
   public productId!: number;
   public quantity!: number;
   public selected!: boolean;
+  public status!: string;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
 
 CartItem.init(
   {
-    id: { type: DataTypes.INTEGER, allowNull: false, autoIncrement: true, primaryKey: true },
+    id: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      autoIncrement: true,
+      primaryKey: true,
+    },
     cartId: { type: DataTypes.INTEGER, allowNull: false },
     productId: { type: DataTypes.INTEGER, allowNull: false },
     quantity: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 1 },
@@ -33,7 +45,7 @@ CartItem.init(
   {
     sequelize,
     modelName: "CartItem",
-    tableName: "cart_items",    
+    tableName: "cart_items",
     timestamps: true,
   }
 );

@@ -47,6 +47,7 @@ interface Product {
   finalPrice?: number;
   buyerCount?: number;
   commentCount?: number;
+  status: "ACTIVE" | "INACTIVE";
 }
 
 interface Rating {
@@ -396,15 +397,30 @@ const ProductDetail: FC = () => {
 
                   <div className="flex space-x-4 pt-4">
                     <button
-                      className="flex-1 px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 flex items-center justify-center"
-                      onClick={() =>
-                        product &&
-                        dispatch(addToCart({ productId: product.id, quantity }))
-                      }
+                      className={`flex-1 px-6 py-3 rounded-lg flex items-center justify-center ${
+                        product.status === "INACTIVE"
+                          ? "bg-gray-400 cursor-not-allowed"
+                          : "bg-red-500 hover:bg-red-600 text-white"
+                      }`}
+                      onClick={() => {
+                        if (product.status === "INACTIVE") {
+                          alert("Sản phẩm hiện đã ngừng bán!");
+                          return;
+                        }
+                        dispatch(
+                          addToCart({ productId: product.id, quantity })
+                        );
+                      }}
+                      disabled={product.status === "INACTIVE"}
                     >
                       <ShoppingCart size={20} className="mr-2" />
-                      <span>Add to Cart</span>
+                      <span>
+                        {product.status === "INACTIVE"
+                          ? "Ngừng bán"
+                          : "Add to Cart"}
+                      </span>
                     </button>
+
                     <button
                       onClick={toggleFavorite}
                       className={`p-3 border border-gray-300 rounded-lg flex items-center justify-center ${

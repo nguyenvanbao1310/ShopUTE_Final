@@ -28,22 +28,31 @@ const CartPage: React.FC = () => {
   const summary = useMemo(() => {
     const items = cart?.items ?? [];
     const selectedItems = items.filter((it) => it.selected);
-    const selectedAmount = selectedItems.reduce((s, it) => s + it.price * it.quantity, 0);
+    const selectedAmount = selectedItems.reduce(
+      (s, it) => s + it.price * it.quantity,
+      0
+    );
     const selectedQty = selectedItems.reduce((s, it) => s + it.quantity, 0);
-
+    const hasInactiveSelected = selectedItems.some(
+      (it) => it.status === "INACTIVE"
+    );
     return {
-      totalItems: cart?.totalItems ?? items.length,               // số LOẠI
-      totalQuantity: cart?.totalQuantity ?? items.reduce((s, it) => s + it.quantity, 0),
+      totalItems: cart?.totalItems ?? items.length, // số LOẠI
+      totalQuantity:
+        cart?.totalQuantity ?? items.reduce((s, it) => s + it.quantity, 0),
       selectedItems: selectedItems.length,
       selectedQty,
       selectedAmount,
+      hasInactiveSelected,
     };
   }, [cart]);
 
   if (status === "loading" && !cart) {
     return (
       <MainLayout>
-        <div className="py-12 text-center text-gray-500">Đang tải giỏ hàng…</div>
+        <div className="py-12 text-center text-gray-500">
+          Đang tải giỏ hàng…
+        </div>
       </MainLayout>
     );
   }
@@ -59,19 +68,30 @@ const CartPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
           <div className="bg-white rounded-lg shadow p-4">
             <div className="flex items-center gap-2 mb-4">
-              <button className="px-3 py-1.5 border rounded" onClick={() => dispatch(selectAll())}>
+              <button
+                className="px-3 py-1.5 border rounded"
+                onClick={() => dispatch(selectAll())}
+              >
                 Chọn tất cả
               </button>
-              <button className="px-3 py-1.5 border rounded" onClick={() => dispatch(unselectAll())}>
+              <button
+                className="px-3 py-1.5 border rounded"
+                onClick={() => dispatch(unselectAll())}
+              >
                 Bỏ chọn tất cả
               </button>
-              <button className="ml-auto px-3 py-1.5 border rounded text-red-600" onClick={() => dispatch(clearCart())}>
+              <button
+                className="ml-auto px-3 py-1.5 border rounded text-red-600"
+                onClick={() => dispatch(clearCart())}
+              >
                 Xoá toàn bộ
               </button>
             </div>
 
             {!cart?.items?.length ? (
-              <div className="py-8 text-center text-gray-500">Giỏ hàng trống.</div>
+              <div className="py-8 text-center text-gray-500">
+                Giỏ hàng trống.
+              </div>
             ) : (
               cart.items.map((it) => <CartItem key={it.id} item={it} />)
             )}
@@ -99,14 +119,18 @@ const CartPage: React.FC = () => {
                 <span>{summary.selectedAmount.toLocaleString("vi-VN")}₫</span>
               </div>
             </div>
-            <button className="mt-4 w-full bg-green-600 text-white rounded-lg py-2 hover:bg-green-700 disabled:opacity-50"
-              disabled={summary.selectedItems === 0}
+            <button
+              className="mt-4 w-full bg-green-600 text-white rounded-lg py-2 hover:bg-green-700 disabled:opacity-50"
+              disabled={
+                summary.selectedItems === 0 || summary.hasInactiveSelected
+              }
               onClick={() => navigate("/checkout")}
             >
               Thanh toán
             </button>
             <p className="mt-3 text-xs text-gray-500">
-              *Giá trong giỏ chỉ mang tính hiển thị. Tổng thanh toán tính theo sản phẩm được chọn.
+              *Giá trong giỏ chỉ mang tính hiển thị. Tổng thanh toán tính theo
+              sản phẩm được chọn.
             </p>
           </aside>
         </div>

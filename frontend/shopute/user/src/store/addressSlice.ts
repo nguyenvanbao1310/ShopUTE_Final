@@ -27,7 +27,7 @@ export const fetchAddresses = createAsyncThunk(
 // Thêm địa chỉ
 export const createAddress = createAsyncThunk(
   "address/createAddress",
-  async (data:{
+  async (data: {
     street: string;
     ward: string;
     province: string;
@@ -90,27 +90,38 @@ const addressSlice = createSlice({
         state.error = action.error.message;
       })
       .addCase(createAddress.fulfilled, (state, action) => {
-        state.addresses.push(action.payload);
-        if (action.payload.isDefault) {
-          state.defaultAddress = action.payload;
+        const newAddr = action.payload;
+        // Nếu địa chỉ mới là mặc định => bỏ mặc định của các địa chỉ cũ
+        if (newAddr.isDefault) {
+          state.addresses.forEach((a) => (a.isDefault = false));
+          state.defaultAddress = newAddr;
         }
+        state.addresses.push(newAddr);
       })
       .addCase(updateAddress.fulfilled, (state, action) => {
-        const idx = state.addresses.findIndex((a) => a.id === action.payload.id);
-        if (idx >= 0) state.addresses[idx] = action.payload;
-        if (action.payload.isDefault) {
-          state.defaultAddress = action.payload;
+        const updated = action.payload;
+        const idx = state.addresses.findIndex((a) => a.id === updated.id);
+        if (idx >= 0) state.addresses[idx] = updated;
+
+        if (updated.isDefault) {
+          state.addresses.forEach((a) => {
+            if (a.id !== updated.id) a.isDefault = false;
+          });
+          state.defaultAddress = updated;
+        } else if (state.defaultAddress?.id === updated.id) {
+          state.defaultAddress = undefined;
         }
       })
 
       // delete
       .addCase(deleteAddress.fulfilled, (state, action) => {
-        state.addresses = state.addresses.filter((a) => a.id !== action.payload);
+        state.addresses = state.addresses.filter(
+          (a) => a.id !== action.payload
+        );
         if (state.defaultAddress?.id === action.payload) {
           state.defaultAddress = undefined;
         }
       });
-      
   },
 });
 

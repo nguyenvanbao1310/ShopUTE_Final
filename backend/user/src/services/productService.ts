@@ -199,7 +199,7 @@ export async function updateProductSvc(id: number, payload: Partial<ProductPaylo
 // ===== LISTS =====
 export async function getNewestProductsSvc(limit = 8) {
   return Product.findAll({
-    where: { status: "ACTIVE" },
+    // where: { status: "ACTIVE" },
     attributes: baseAttrs,
     include: buildIncludeCommon(),
     order: [["createdAt", "DESC"]],
@@ -210,7 +210,7 @@ export async function getNewestProductsSvc(limit = 8) {
 
 export async function getBestSellersSvc(limit = 6) {
   return Product.findAll({
-    where: { status: "ACTIVE" },
+    // where: { status: "ACTIVE" },
     attributes: [
       ...baseAttrs,
       [fn("COALESCE", fn("SUM", col("OrderDetails.quantity")), 0), "sold"],
@@ -233,7 +233,7 @@ export async function getBestSellersSvc(limit = 6) {
 
 export async function getMostViewedSvc(limit = 8) {
   return Product.findAll({
-    where: { status: "ACTIVE" },
+    // where: { status: "ACTIVE" },
     attributes: baseAttrs,
     include: buildIncludeCommon(),
     order: [["viewCount", "DESC"], ["createdAt", "DESC"]],
@@ -243,7 +243,7 @@ export async function getMostViewedSvc(limit = 8) {
 
 export async function getTopDiscountSvc(limit = 4) {
   return Product.findAll({
-    where: { status: "ACTIVE" },
+    // where: { status: "ACTIVE" },
     attributes: baseAttrs,
     include: [
       {
@@ -311,7 +311,7 @@ export async function getProductDetailSvc(id: number) {
 export async function getSimilarProductsSvc(productId: number, categoryId: number, limit = 4) {
   return Product.findAll({
     where: {
-      status: "ACTIVE",
+      // status: "ACTIVE",
       categoryId, // cùng danh mục
       id: { [Op.ne]: productId }, // loại bỏ sản phẩm hiện tại
     },

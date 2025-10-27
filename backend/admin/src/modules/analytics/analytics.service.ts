@@ -6,6 +6,7 @@ import { OrderDetail } from '../orders/entities/order-detail.entity';
 import { User } from 'src/modules/users/entities/user.entity';
 import { Product } from '../products/entities/product.entity';
 import axios from 'axios';
+import { InventoryAlert } from './types/inventory-alert.type';
 
 @Injectable()
 export class AnalyticsService {
@@ -208,6 +209,164 @@ export class AnalyticsService {
       trend,
       trendValue: parseFloat(Math.abs(trendValue).toFixed(2)),
     };
+  }
+  // 📦 Dự đoán tồn kho (AI)
+  async getInventoryAlerts(): Promise<InventoryAlert[]> {
+    const alerts: InventoryAlert[] = [];
+
+    const products = await this.productRepo.query(`
+    SELECT 
+      p.id AS productId, 
+      p.name AS productName, 
+      p.stock AS currentStock
+    FROM products p
+    WHERE p.stock IS NOT NULL AND p.stock > 0
+  `);
+
+    console.log(`📦 Tổng số sản phẩm cần dự đoán: ${products.length}`);
+
+    for (const p of products) {
+      try {
+        // Lấy lịch sử bán hàng
+        const history = await this.orderDetailRepo.query(`
+        SELECT 
+          DATE_FORMAT(o.createdAt, '%Y-%m') AS month,
+          COALESCE(SUM(od.quantity), 0) AS sold,
+          ${p.currentStock} AS stock
+        FROM order_details od
+        JOIN orders o ON o.id = od.orderId
+        WHERE o.status IN ('COMPLETED', 'SHIPPED')
+          AND od.productId = ${p.productId}
+          AND o.createdAt >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+        GROUP BY month
+        ORDER BY month
+        LIMIT 6
+      `);
+
+        // Xử lý dữ liệu ít
+        let processedHistory: any[] = history;
+
+        if (history.length === 0) {
+          console.log(`🔄 Tạo dữ liệu mẫu cho ${p.productName}`);
+          processedHistory = this.generateSampleData(p.currentStock);
+        } else if (history.length === 1) {
+          console.log(`🔄 Bổ sung dữ liệu mẫu cho ${p.productName}`);
+          processedHistory = this.complementSampleData(history, p.currentStock);
+        }
+
+        console.log(
+          `📊 ${p.productName}: có ${processedHistory.length} tháng dữ liệu`,
+        );
+
+        if (processedHistory.length < 2) {
+          console.log(`⚠️ Bỏ qua ${p.productName}: không đủ dữ liệu lịch sử`);
+          continue;
+        }
+
+        // Gọi Flask AI
+        console.log(`🔄 Gọi AI cho ${p.productName}...`);
+        const res = await axios.post(
+          'http://127.0.0.1:5002/inventory-forecast',
+          processedHistory,
+          {
+            headers: { 'Content-Type': 'application/json' },
+            timeout: 30000,
+          },
+        );
+
+        const forecast = res.data;
+        console.log(`🔮 Kết quả dự đoán cho ${p.productName}:`, forecast);
+
+        // Kiểm tra cảnh báo
+        const criticalMonths = forecast.filter(
+          (f: any) => f.predicted_stock <= 2,
+        );
+
+        if (criticalMonths.length > 0) {
+          const firstCritical = criticalMonths[0];
+          const alertLevel =
+            firstCritical.predicted_stock <= 0
+              ? 'HIGH'
+              : firstCritical.predicted_stock <= 1
+                ? 'MEDIUM'
+                : 'LOW';
+
+          alerts.push({
+            productId: p.productId,
+            productName: p.productName,
+            currentStock: p.currentStock,
+            outOfStockMonth: firstCritical.month,
+            predicted_sold: firstCritical.predicted_sold,
+            alertLevel: alertLevel,
+          });
+
+          console.log(
+            `🚨 CẢNH BÁO ${alertLevel}: ${p.productName} sẽ hết hàng vào ${firstCritical.month}`,
+          );
+        } else {
+          console.log(`✅ ${p.productName}: đủ hàng trong 3 tháng tới`);
+        }
+      } catch (err: any) {
+        console.error(
+          `❌ Lỗi khi dự đoán tồn kho cho ${p.productName}:`,
+          err.message,
+        );
+      }
+    }
+
+    console.log(`📋 Tổng số cảnh báo: ${alerts.length}`);
+    return alerts;
+  }
+
+  // 🔹 Sửa lỗi TypeScript - thêm type cho hàm
+  private generateSampleData(
+    currentStock: number,
+  ): Array<{ month: string; sold: number; stock: number }> {
+    const months: Array<{ month: string; sold: number; stock: number }> = [];
+    const now = new Date();
+
+    for (let i = 2; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const month = date.toISOString().slice(0, 7);
+      const sold = Math.floor(Math.random() * 5) + 1;
+
+      months.push({
+        month: month,
+        sold: sold,
+        stock: currentStock,
+      });
+    }
+
+    return months;
+  }
+
+  // 🔹 Sửa lỗi TypeScript - thêm type cho hàm
+  private complementSampleData(
+    existingData: any[],
+    currentStock: number,
+  ): Array<{ month: string; sold: number; stock: number }> {
+    const months: Array<{ month: string; sold: number; stock: number }> = [
+      ...existingData,
+    ];
+    const lastDate = new Date(existingData[0].month + '-01');
+
+    for (let i = 1; i <= 2; i++) {
+      const date = new Date(lastDate.getFullYear(), lastDate.getMonth() - i, 1);
+      const month = date.toISOString().slice(0, 7);
+      const baseSold = existingData[0].sold;
+      const sold = Math.max(
+        1,
+        Math.floor(baseSold * (0.8 + Math.random() * 0.4)),
+      );
+
+      months.unshift({
+        month: month,
+        sold: sold,
+        stock: currentStock,
+      });
+    }
+
+    return months;
   }
   // 📍 Doanh số theo địa điểm (tính % doanh thu theo city)
   async getSalesByLocation() {

@@ -41,9 +41,30 @@ export default function ProductsPage() {
   // ➕ Thêm sản phẩm mới
   const handleAddProduct = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
     const form = e.currentTarget;
     const formData = new FormData(form);
     const data = Object.fromEntries(formData.entries()) as any;
+
+    const price = Number(data.price);
+    const stock = Number(data.stock);
+
+    if (isNaN(price) || price <= 0) {
+      alert("⚠️ Giá sản phẩm phải lớn hơn 0!");
+      return;
+    }
+    if (price > 2_000_000_000) {
+      alert("⚠️ Giá sản phẩm quá lớn (tối đa 2,000,000,000 VNĐ)!");
+      return;
+    }
+    if (isNaN(stock) || stock < 0) {
+      alert("⚠️ Số lượng không hợp lệ!");
+      return;
+    }
+    if (stock > 10_000) {
+      alert("⚠️ Số lượng quá lớn (tối đa 10,000 sản phẩm)!");
+      return;
+    }
 
     const file = formData.get("thumbnail") as File | null;
     let thumbnailUrl = "";
@@ -115,8 +136,26 @@ export default function ProductsPage() {
     }
   };
 
-  // 💾 Lưu chỉnh sửa
   const handleEditSubmit = async (id: number, formData: FormData) => {
+    const price = Number(formData.get("price"));
+    const stock = Number(formData.get("stock"));
+
+    if (isNaN(price) || price <= 0) {
+      alert("⚠️ Giá sản phẩm phải lớn hơn 0!");
+      return;
+    }
+    if (price > 2_000_000_000) {
+      alert("⚠️ Giá sản phẩm quá lớn (tối đa 2,000,000,000 VNĐ)!");
+      return;
+    }
+    if (isNaN(stock) || stock < 0) {
+      alert("⚠️ Số lượng không hợp lệ!");
+      return;
+    }
+    if (stock > 10_000) {
+      alert("⚠️ Số lượng quá lớn (tối đa 10,000 sản phẩm)!");
+      return;
+    }
     try {
       const updatedProduct: any = {
         name: formData.get("name") as string,
@@ -237,7 +276,6 @@ export default function ProductsPage() {
                   <th className="p-2">Price</th>
                   <th className="p-2">Stock</th>
                   <th className="p-2">Views</th>
-                  <th className="p-2">Status</th>
                   <th className="p-2">Created At</th>
                   <th className="p-2 text-center">Actions</th>
                 </tr>
@@ -266,17 +304,6 @@ export default function ProductsPage() {
                     </td>
                     <td className="p-2">{p.stock}</td>
                     <td className="p-2">{p.viewCount}</td>
-                    <td className="p-2">
-                      <span
-                        className={`px-2 py-1 rounded text-sm ${
-                          p.status === "ACTIVE"
-                            ? "bg-green-100 text-green-600"
-                            : "bg-gray-200 text-gray-600"
-                        }`}
-                      >
-                        {p.status}
-                      </span>
-                    </td>
                     <td className="p-2 text-gray-600">
                       {new Date(p.createdAt).toLocaleDateString()}
                     </td>

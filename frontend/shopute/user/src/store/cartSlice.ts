@@ -17,7 +17,9 @@ function getDeviceId(): string {
     const KEY = "deviceId";
     let id = localStorage.getItem(KEY) ?? "";
     if (!id) {
-      id = (crypto as any)?.randomUUID?.() ?? `dev-${Math.random().toString(36).slice(2, 12)}`;
+      id =
+        (crypto as any)?.randomUUID?.() ??
+        `dev-${Math.random().toString(36).slice(2, 12)}`;
       localStorage.setItem(KEY, id);
     }
     return id;
@@ -35,6 +37,7 @@ export type CartItemDTO = {
   quantity: number;
   selected: boolean;
   imageUrl?: string;
+  status?: string;
 };
 
 export type CartDTO = {
@@ -64,7 +67,11 @@ export const fetchCart = createAsyncThunk<CartDTO>(
       const headers: any = token
         ? { Authorization: `Bearer ${token}` }
         : { "x-device-id": getDeviceId() };
-      const resp = await axios.get(`${BASE_URL}/cart`, { headers, withCredentials: true });
+      const resp = await axios.get(`${BASE_URL}/cart`, {
+        headers,
+        withCredentials: true,
+      });
+      console.log("🧾 Backend /cart response:", resp.data);
       const data: any = (resp?.data as any)?.data ?? (resp?.data as any);
       const items: CartItemDTO[] = (data.items ?? []).map((it: any) => ({
         id: Number(it.id),
@@ -74,13 +81,22 @@ export const fetchCart = createAsyncThunk<CartDTO>(
         quantity: Number(it.quantity ?? 0),
         selected: Boolean(it.selected),
         imageUrl: it.thumbnailUrl || it.imageUrl || undefined,
+        status: it.status ?? "ACTIVE",
       })) as CartItemDTO[];
       const totalItems = data?.totalItems ?? items.length;
       const totalQuantity =
-        data?.totalQuantity ?? items.reduce((s: number, it: CartItemDTO) => s + (it.quantity || 0), 0);
-      return { cartId: data?.cartId, items, totalItems, totalQuantity } as CartDTO;
+        data?.totalQuantity ??
+        items.reduce((s: number, it: CartItemDTO) => s + (it.quantity || 0), 0);
+      return {
+        cartId: data?.cartId,
+        items,
+        totalItems,
+        totalQuantity,
+      } as CartDTO;
     } catch (e: any) {
-      return rejectWithValue(e?.response?.data?.message ?? "Failed to fetch cart");
+      return rejectWithValue(
+        e?.response?.data?.message ?? "Failed to fetch cart"
+      );
     }
   }
 );
@@ -96,10 +112,16 @@ export const addToCart = createAsyncThunk<
       const headers: any = token
         ? { Authorization: `Bearer ${token}` }
         : { "x-device-id": getDeviceId() };
-      await axios.post(`${BASE_URL}/cart/items`, { productId, quantity }, { headers, withCredentials: true });
+      await axios.post(
+        `${BASE_URL}/cart/items`,
+        { productId, quantity },
+        { headers, withCredentials: true }
+      );
       await dispatch(fetchCart());
     } catch (e: any) {
-      return rejectWithValue(e?.response?.data?.message ?? "Failed to add to cart");
+      return rejectWithValue(
+        e?.response?.data?.message ?? "Failed to add to cart"
+      );
     }
   }
 );
@@ -115,10 +137,16 @@ export const updateCartItem = createAsyncThunk<
       const headers: any = token
         ? { Authorization: `Bearer ${token}` }
         : { "x-device-id": getDeviceId() };
-      await axios.patch(`${BASE_URL}/cart/items/${itemId}`, { quantity }, { headers, withCredentials: true });
+      await axios.patch(
+        `${BASE_URL}/cart/items/${itemId}`,
+        { quantity },
+        { headers, withCredentials: true }
+      );
       await dispatch(fetchCart());
     } catch (e: any) {
-      return rejectWithValue(e?.response?.data?.message ?? "Failed to update quantity");
+      return rejectWithValue(
+        e?.response?.data?.message ?? "Failed to update quantity"
+      );
     }
   }
 );
@@ -134,10 +162,16 @@ export const toggleSelectItem = createAsyncThunk<
       const headers: any = token
         ? { Authorization: `Bearer ${token}` }
         : { "x-device-id": getDeviceId() };
-      await axios.patch(`${BASE_URL}/cart/items/${itemId}`, { selected }, { headers, withCredentials: true });
+      await axios.patch(
+        `${BASE_URL}/cart/items/${itemId}`,
+        { selected },
+        { headers, withCredentials: true }
+      );
       await dispatch(fetchCart());
     } catch (e: any) {
-      return rejectWithValue(e?.response?.data?.message ?? "Failed to toggle select");
+      return rejectWithValue(
+        e?.response?.data?.message ?? "Failed to toggle select"
+      );
     }
   }
 );
@@ -150,10 +184,16 @@ export const selectAll = createAsyncThunk<void>(
       const headers: any = token
         ? { Authorization: `Bearer ${token}` }
         : { "x-device-id": getDeviceId() };
-      await axios.post(`${BASE_URL}/cart/toggle-select-all`, { selected: true }, { headers, withCredentials: true });
+      await axios.post(
+        `${BASE_URL}/cart/toggle-select-all`,
+        { selected: true },
+        { headers, withCredentials: true }
+      );
       await dispatch(fetchCart());
     } catch (e: any) {
-      return rejectWithValue(e?.response?.data?.message ?? "Failed to select all");
+      return rejectWithValue(
+        e?.response?.data?.message ?? "Failed to select all"
+      );
     }
   }
 );
@@ -166,10 +206,16 @@ export const unselectAll = createAsyncThunk<void>(
       const headers: any = token
         ? { Authorization: `Bearer ${token}` }
         : { "x-device-id": getDeviceId() };
-      await axios.post(`${BASE_URL}/cart/toggle-select-all`, { selected: false }, { headers, withCredentials: true });
+      await axios.post(
+        `${BASE_URL}/cart/toggle-select-all`,
+        { selected: false },
+        { headers, withCredentials: true }
+      );
       await dispatch(fetchCart());
     } catch (e: any) {
-      return rejectWithValue(e?.response?.data?.message ?? "Failed to unselect all");
+      return rejectWithValue(
+        e?.response?.data?.message ?? "Failed to unselect all"
+      );
     }
   }
 );
@@ -182,10 +228,15 @@ export const removeCartItem = createAsyncThunk<void, { itemId: number }>(
       const headers: any = token
         ? { Authorization: `Bearer ${token}` }
         : { "x-device-id": getDeviceId() };
-      await axios.delete(`${BASE_URL}/cart/items/${itemId}`, { headers, withCredentials: true });
+      await axios.delete(`${BASE_URL}/cart/items/${itemId}`, {
+        headers,
+        withCredentials: true,
+      });
       await dispatch(fetchCart());
     } catch (e: any) {
-      return rejectWithValue(e?.response?.data?.message ?? "Failed to remove item");
+      return rejectWithValue(
+        e?.response?.data?.message ?? "Failed to remove item"
+      );
     }
   }
 );
@@ -198,10 +249,15 @@ export const clearCart = createAsyncThunk<void>(
       const headers: any = token
         ? { Authorization: `Bearer ${token}` }
         : { "x-device-id": getDeviceId() };
-      await axios.delete(`${BASE_URL}/cart/clear`, { headers, withCredentials: true });
+      await axios.delete(`${BASE_URL}/cart/clear`, {
+        headers,
+        withCredentials: true,
+      });
       await dispatch(fetchCart());
     } catch (e: any) {
-      return rejectWithValue(e?.response?.data?.message ?? "Failed to clear cart");
+      return rejectWithValue(
+        e?.response?.data?.message ?? "Failed to clear cart"
+      );
     }
   }
 );
@@ -222,7 +278,9 @@ export const mergeGuestCart = createAsyncThunk<void>(
       );
       await dispatch(fetchCart());
     } catch (e: any) {
-      return rejectWithValue(e?.response?.data?.message ?? "Failed to merge cart");
+      return rejectWithValue(
+        e?.response?.data?.message ?? "Failed to merge cart"
+      );
     }
   }
 );
@@ -235,11 +293,16 @@ export const clearSelectedItems = createAsyncThunk<void>(
       const headers: any = token
         ? { Authorization: `Bearer ${token}` }
         : { "x-device-id": getDeviceId() };
-      await axios.delete(`${BASE_URL}/cart/clear-selected`, { headers, withCredentials: true });
+      await axios.delete(`${BASE_URL}/cart/clear-selected`, {
+        headers,
+        withCredentials: true,
+      });
       await dispatch(fetchCart());
     } catch (e: any) {
-      return rejectWithValue(e?.response?.data?.message ?? "Failed to clear selected items");
-    } 
+      return rejectWithValue(
+        e?.response?.data?.message ?? "Failed to clear selected items"
+      );
+    }
   }
 );
 // ===== Slice =====
@@ -283,7 +346,8 @@ const cartSlice = createSlice({
         state.error = (action.payload as string) ?? "Failed to clear cart";
       })
       .addCase(clearSelectedItems.rejected, (state, action) => {
-        state.error = (action.payload as string) ?? "Failed to clear selected items";
+        state.error =
+          (action.payload as string) ?? "Failed to clear selected items";
       });
   },
 });
@@ -292,7 +356,8 @@ export default cartSlice.reducer;
 
 // ===== Selectors =====
 export const selectCart = (s: any) => s.cart?.cart as CartDTO | null;
-export const selectCartStatus = (s: any) => s.cart?.status as CartState["status"];
+export const selectCartStatus = (s: any) =>
+  s.cart?.status as CartState["status"];
 export const selectCartBadge = (s: any) => s.cart?.cart?.totalItems ?? 0;
 export const selectSelectedItems = (s: any) =>
   (s.cart?.cart?.items ?? []).filter((it: CartItemDTO) => it.selected);

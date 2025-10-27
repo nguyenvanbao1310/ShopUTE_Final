@@ -59,13 +59,17 @@ export class ProductsService {
   }> {
     const skip = (page - 1) * limit;
 
-    const where = search
-      ? [
-          { name: ILike(`%${search}%`) },
-          { brand: ILike(`%${search}%`) },
-          { description: ILike(`%${search}%`) },
-        ]
-      : {};
+    // ✅ Chỉ hiển thị sản phẩm ACTIVE
+    let where: any = { status: 'ACTIVE' };
+
+    // ✅ Nếu có tìm kiếm, thêm điều kiện LIKE
+    if (search) {
+      where = [
+        { name: ILike(`%${search}%`), status: 'ACTIVE' },
+        { brand: ILike(`%${search}%`), status: 'ACTIVE' },
+        { description: ILike(`%${search}%`), status: 'ACTIVE' },
+      ];
+    }
 
     // ✅ Xử lý sắp xếp
     let order: Record<string, 'ASC' | 'DESC'> = { id: 'ASC' };
@@ -213,7 +217,20 @@ export class ProductsService {
     return await this.productRepo.save(product);
   }
 
-  delete(id: number) {
-    return this.productRepo.delete(id);
+  async delete(id: number) {
+    const product = await this.productRepo.findOneBy({ id });
+    if (!product) {
+      throw new NotFoundException('Sản phẩm không tồn tại');
+    }
+
+    // Nếu đã ngừng bán rồi thì không cần cập nhật nữa
+    if (product.status === 'INACTIVE') {
+      return { message: 'Sản phẩm đã ở trạng thái ngừng bán' };
+    }
+
+    product.status = 'INACTIVE';
+    await this.productRepo.save(product);
+
+    return { message: 'Sản phẩm đã được chuyển sang trạng thái ngừng bán' };
   }
 }
