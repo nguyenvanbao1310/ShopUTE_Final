@@ -29,6 +29,10 @@ export async function addItem(ctx: CartCtx, productId: number, quantity = 1) {
     const product = await Product.findByPk(productId, { transaction: t });
     if (!product) throw new Error("PRODUCT_NOT_FOUND");
 
+    if (product.status === "INACTIVE") {
+      throw new Error("PRODUCT_INACTIVE");
+    }
+
     const existing = await CartItem.findOne({
       where: { cartId: cart.id, productId },
       transaction: t,
@@ -111,7 +115,7 @@ export async function getCartDetail(ctx: CartCtx) {
       {
         model: Product,
         as: "product",
-        attributes: ["id", "name", "price", "thumbnailUrl"],
+        attributes: ["id", "name", "price", "thumbnailUrl", "status"],
         include: [
           {
             model: ProductDiscount,
@@ -139,6 +143,7 @@ export async function getCartDetail(ctx: CartCtx) {
       price: Number((it as any).product?.price ?? 0), // hiển thị tham khảo; không checkout
       quantity: it.quantity,
       selected: it.selected,
+      sstatus: (it as any).product?.status,
     };
   });
 
@@ -153,7 +158,7 @@ export async function getCartDetailWithDiscount(ctx: CartCtx) {
       {
         model: Product,
         as: "product",
-        attributes: ["id", "name", "price", "thumbnailUrl"],
+        attributes: ["id", "name", "price", "thumbnailUrl", "status"],
         include: [
           {
             model: ProductDiscount,
@@ -178,12 +183,15 @@ export async function getCartDetailWithDiscount(ctx: CartCtx) {
     const d = p.discount || {};
     const now = new Date();
     const active =
-      d && d.isActive === true &&
+      d &&
+      d.isActive === true &&
       (!d.startsAt || new Date(d.startsAt) <= now) &&
       (!d.endsAt || new Date(d.endsAt) >= now) &&
       Number(d.discountPercent) > 0;
     const discountPercent = active ? Number(d.discountPercent) : 0;
-    const finalPrice = active ? Math.round((rawPrice * (1 - discountPercent / 100)) * 100) / 100 : rawPrice;
+    const finalPrice = active
+      ? Math.round(rawPrice * (1 - discountPercent / 100) * 100) / 100
+      : rawPrice;
     return {
       id: it.id,
       productId: it.productId,
@@ -192,6 +200,7 @@ export async function getCartDetailWithDiscount(ctx: CartCtx) {
       price: Number(finalPrice),
       quantity: it.quantity,
       selected: it.selected,
+      status: (it as any).product?.status,
     };
   });
 

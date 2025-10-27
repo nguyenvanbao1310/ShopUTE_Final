@@ -12,6 +12,7 @@ interface ProductCardProps {
   name: string;
   price: number;
   thumbnailUrl?: string;
+  status?: "ACTIVE" | "INACTIVE";
 }
 
 const ProductCard: FC<ProductCardProps> = ({
@@ -19,21 +20,23 @@ const ProductCard: FC<ProductCardProps> = ({
   name,
   price,
   thumbnailUrl,
+  status,
 }) => {
   const dispatch = useDispatch<AppDispatch>();
   const [liked, setLiked] = useState(false);
-  const formatPrice = (value: number) => {
-    return value.toLocaleString("vi-VN") + " VNĐ";
-  };
   const isAuthenticated = useSelector(
     (state: RootState) => state.auth.isAuthenticated
   );
+
+  const formatPrice = (value: number) => {
+    return value.toLocaleString("vi-VN") + " VNĐ";
+  };
+
   useEffect(() => {
     if (!isAuthenticated) return;
     const checkWishlist = async () => {
       try {
         const res = await wishlistApi.getWishlist();
-        // Nếu backend trả res.data
         const wishlist = res.data.items;
         const exists = wishlist.some((item: any) => item.productId === id);
         if (exists) setLiked(true);
@@ -61,7 +64,7 @@ const ProductCard: FC<ProductCardProps> = ({
   };
 
   return (
-    <div className="relative bg-white rounded-xl shadow-lg p-4 hover:shadow-2xl transition-shadow duration-300  cursor-pointer">
+    <div className="relative bg-white rounded-xl shadow-lg p-4 hover:shadow-2xl transition-shadow duration-300 cursor-pointer">
       {/* Nút yêu thích */}
       <button onClick={toggleWishlist} className="absolute top-2 right-2 z-10">
         <Heart
@@ -71,20 +74,32 @@ const ProductCard: FC<ProductCardProps> = ({
           className="transition"
         />
       </button>
+
       <img
         src={`${IMAGE_BASE_URL}/${thumbnailUrl}`}
         alt={name}
         className="w-full h-40 object-contain rounded"
       />
+
       <h3 className="mt-2 font-semibold text-gray-800 text-center">{name}</h3>
       <p className="text-pink-600 font-bold text-center">
         {formatPrice(Number(price))}
       </p>
+
+      {/* ✅ Nút Add to Cart / Ngừng bán */}
       <button
-        className="mt-2 w-full bg-pink-500 text-white py-2 rounded hover:bg-pink-600"
-        onClick={() => dispatch(addToCart({ productId: id, quantity: 1 }))}
+        className={`mt-2 w-full py-2 rounded text-white ${
+          status === "INACTIVE"
+            ? "bg-gray-400 cursor-not-allowed"
+            : "bg-pink-500 hover:bg-pink-600"
+        }`}
+        disabled={status === "INACTIVE"}
+        onClick={() => {
+          if (status === "INACTIVE") return; // Không cho click
+          dispatch(addToCart({ productId: id, quantity: 1 }));
+        }}
       >
-        Add to Cart
+        {status === "INACTIVE" ? "Ngừng bán" : "Add to Cart"}
       </button>
     </div>
   );

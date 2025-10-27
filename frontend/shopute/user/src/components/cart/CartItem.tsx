@@ -60,10 +60,15 @@ const CartItem: React.FC<Props> = ({ item }) => {
       <div className="flex-1 min-w-0">
         <Link
           to={`/product/${item.productId}`}
-          className="line-clamp-2 font-medium hover:underline"
+          className="line-clamp-2 font-medium hover:underline flex items-center gap-2"
         >
-          {item.name}
-        </Link>
+          <span>{item.name}</span>
+          {item.status === "INACTIVE" && (
+            <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-600 font-medium border border-red-200">
+              Ngưng hoạt động
+            </span>
+          )}
+        </Link>  
 
         <div className="mt-1 text-red-600 font-semibold">
           {item.price.toLocaleString("vi-VN")}₫

@@ -10,6 +10,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Product, productApi, ProductImage } from "@/lib/productApi";
+import { categoriesApi, Category } from "@/lib/categoriesApi";
 
 export default function EditProductModal({
   open,
@@ -22,89 +23,76 @@ export default function EditProductModal({
   product: (Product & { images?: { id: number; url: string }[] }) | null;
   onSubmit: (id: number, formData: FormData) => void;
 }) {
+  const [categories, setCategories] = useState<Category[]>([]);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
-  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
-
-  const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imageObjects, setImageObjects] = useState<
     (ProductImage | { url: string; file?: File })[]
   >([]);
-
   const [thumbnailRemoved, setThumbnailRemoved] = useState(false);
 
-  // Khi mở modal, tự load dữ liệu cũ
+  // 🟢 Load danh mục
+  useEffect(() => {
+    categoriesApi.getAll().then(setCategories).catch(console.error);
+  }, []);
+
+  // 🟢 Khi mở modal, load dữ liệu cũ
   useEffect(() => {
     if (product) {
       const API_URL =
         process.env.NEXT_PUBLIC_API_BASE_IMAGE_URL || "http://localhost:3000";
 
-      // Ảnh thumbnail cũ
       setThumbnailPreview(
         product.thumbnailUrl ? `${API_URL}/${product.thumbnailUrl}` : null
       );
 
-      // Ảnh phụ
       productApi.getImages(product.id).then((imgs) => {
         const formatted = imgs.map((img) => ({
           id: img.id,
           url: `${API_URL}/${img.url}`,
         }));
         setImageObjects(formatted);
-        setImagePreviews(formatted.map((img) => img.url));
       });
     }
   }, [product]);
 
-  // --- IMAGE HANDLERS ---
+  // 🟣 Handle upload thumbnail
   const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) setThumbnailPreview(URL.createObjectURL(file));
   };
 
+  // 🟣 Handle upload ảnh phụ
   const handleImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     const newObjs = files.map((file) => ({
       url: URL.createObjectURL(file),
       file,
     }));
-
     setImageObjects((prev) => [...prev, ...newObjs]);
-    setImagePreviews((prev) => [...prev, ...newObjs.map((obj) => obj.url)]);
-    setImageFiles((prev) => [...prev, ...files]);
   };
 
+  // 🟣 Xoá thumbnail
   const handleRemoveThumbnail = () => {
     setThumbnailPreview(null);
     setThumbnailRemoved(true);
   };
 
+  // 🟣 Xoá ảnh phụ
   const handleRemoveImage = async (index: number) => {
     const target = imageObjects[index];
     if (!target || !product) return;
 
     try {
-      // Nếu là ảnh cũ trong DB → gọi API xoá
       if ("id" in target && target.id) {
         await productApi.deleteImage(target.id);
       }
-
-      // Sau khi xoá → load lại danh sách ảnh phụ
-      const API_URL =
-        process.env.NEXT_PUBLIC_API_BASE_IMAGE_URL || "http://localhost:3000";
-      const updatedImgs = await productApi.getImages(product.id);
-      const formatted = updatedImgs.map((img) => ({
-        id: img.id,
-        url: `${API_URL}/${img.url}`,
-      }));
-
-      // ✅ Cập nhật lại ảnh phụ, nhưng giữ nguyên thumbnail
-      setImageObjects(formatted);
-      setImagePreviews(formatted.map((img) => img.url));
+      setImageObjects((prev) => prev.filter((_, i) => i !== index));
     } catch (err) {
       console.error("Lỗi khi xoá ảnh:", err);
     }
   };
 
+  // 🟢 Submit
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!product) return;
@@ -112,61 +100,47 @@ export default function EditProductModal({
     const form = e.currentTarget;
     const formData = new FormData();
 
-    // 🧩 Validate: bắt buộc phải có ảnh thumbnail
     const thumbnailInput = form.querySelector(
       'input[name="thumbnail"]'
     ) as HTMLInputElement;
-
     const hasNewThumbnail = thumbnailInput?.files?.[0];
     const hasExistingThumbnail = !thumbnailRemoved && thumbnailPreview !== null;
 
     if (!hasNewThumbnail && !hasExistingThumbnail) {
-      alert("❌ Vui lòng chọn ảnh thumbnail cho sản phẩm!");
+      alert("❌ Vui lòng chọn ảnh thumbnail!");
       return;
     }
 
-    // === Validate: phải có ít nhất 1 ảnh phụ ===
-    const totalImages =
-      imageObjects.length +
-      ((form.querySelector('input[name="images"]') as HTMLInputElement)?.files
-        ?.length || 0);
-
-    if (totalImages === 0) {
-      alert("❌ Vui lòng chọn ít nhất một ảnh phụ cho sản phẩm!");
+    if (imageObjects.length === 0) {
+      alert("❌ Vui lòng chọn ít nhất 1 ảnh phụ!");
       return;
     }
 
-    // Thêm thông tin text
-    formData.append("name", form.name.value);
-    formData.append("brand", form.brand.value);
-    formData.append("description", form.description.value);
-    formData.append("categoryId", form.categoryId.value);
-    formData.append("stock", form.stock.value);
-    formData.append("price", form.price.value);
-    formData.append("status", form.status.value);
-    formData.append("cpu", form.cpu.value);
-    formData.append("ram", form.ram.value);
-    formData.append("storage", form.storage.value);
-    formData.append("gpu", form.gpu.value);
-    formData.append("screen", form.screen.value);
+    // Thêm các trường form
+    const fields = [
+      "name",
+      "brand",
+      "description",
+      "categoryId",
+      "stock",
+      "price",
+      "status",
+      "cpu",
+      "ram",
+      "storage",
+      "gpu",
+      "screen",
+    ];
+    fields.forEach((f) => formData.append(f, form[f].value));
 
-    if (thumbnailRemoved) {
-      formData.append("removeThumbnail", "true");
-    }
+    if (thumbnailRemoved) formData.append("removeThumbnail", "true");
+    if (hasNewThumbnail) formData.append("thumbnail", thumbnailInput.files![0]);
 
-    // Thêm thumbnail nếu có chọn mới
-    if (hasNewThumbnail) {
-      formData.append("thumbnail", thumbnailInput.files![0]);
-    }
-
-    // Thêm ảnh phụ
     const imagesInput = form.querySelector(
       'input[name="images"]'
     ) as HTMLInputElement;
     if (imagesInput?.files?.length) {
-      for (const file of imagesInput.files) {
-        formData.append("images", file);
-      }
+      for (const file of imagesInput.files) formData.append("images", file);
     }
 
     onSubmit(product.id, formData);
@@ -187,15 +161,13 @@ export default function EditProductModal({
             encType="multipart/form-data"
             className="mt-4 grid grid-cols-3 gap-6"
           >
-            {/* LEFT SECTION */}
+            {/* LEFT */}
             <div className="col-span-2 flex flex-col gap-6">
-              {/* Product Info */}
+              {/* Thông tin cơ bản */}
               <div className="border rounded-xl p-5 shadow-sm bg-gray-50/30">
                 <h3 className="font-semibold mb-3 text-lg">
                   Product Information
                 </h3>
-
-                {/* Basic Info */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-sm font-medium">Product Name</label>
@@ -227,7 +199,7 @@ export default function EditProductModal({
                   ></textarea>
                 </div>
 
-                {/* Thumbnail Upload */}
+                {/* Thumbnail */}
                 <div className="mt-4">
                   <label className="text-sm font-medium">
                     Product Thumbnail
@@ -257,7 +229,7 @@ export default function EditProductModal({
                   )}
                 </div>
 
-                {/* ✅ Multiple Images Upload */}
+                {/* Ảnh phụ */}
                 <div className="mt-4">
                   <label className="text-sm font-medium">More Images</label>
                   <input
@@ -268,12 +240,12 @@ export default function EditProductModal({
                     onChange={handleImagesChange}
                     className="border border-dashed border-gray-400 p-3 rounded w-full cursor-pointer mt-1"
                   />
-                  {imagePreviews.length > 0 && (
+                  {imageObjects.length > 0 && (
                     <div className="mt-3 grid grid-cols-4 gap-3">
-                      {imagePreviews.map((src, i) => (
+                      {imageObjects.map((img, i) => (
                         <div key={i} className="relative">
                           <img
-                            src={src}
+                            src={img.url}
                             alt={`Preview ${i}`}
                             className="w-full h-24 object-cover rounded-lg shadow"
                           />
@@ -292,36 +264,15 @@ export default function EditProductModal({
 
                 {/* Specs */}
                 <div className="grid grid-cols-2 gap-3 mt-5">
-                  <input
-                    name="cpu"
-                    defaultValue={product.cpu}
-                    placeholder="CPU"
-                    className="border p-2 rounded"
-                  />
-                  <input
-                    name="ram"
-                    defaultValue={product.ram}
-                    placeholder="RAM"
-                    className="border p-2 rounded"
-                  />
-                  <input
-                    name="storage"
-                    defaultValue={product.storage}
-                    placeholder="Storage"
-                    className="border p-2 rounded"
-                  />
-                  <input
-                    name="gpu"
-                    defaultValue={product.gpu}
-                    placeholder="GPU"
-                    className="border p-2 rounded"
-                  />
-                  <input
-                    name="screen"
-                    defaultValue={product.screen}
-                    placeholder="Screen"
-                    className="border p-2 rounded col-span-2"
-                  />
+                  {["cpu", "ram", "storage", "gpu", "screen"].map((f) => (
+                    <input
+                      key={f}
+                      name={f}
+                      defaultValue={(product as any)[f]}
+                      placeholder={f.toUpperCase()}
+                      className="border p-2 rounded"
+                    />
+                  ))}
                 </div>
               </div>
 
@@ -332,14 +283,20 @@ export default function EditProductModal({
                 </h3>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-sm font-medium">Category ID</label>
-                    <input
+                    <label className="text-sm font-medium">Category</label>
+                    <select
                       name="categoryId"
-                      type="number"
                       defaultValue={product.categoryId}
                       className="border p-2 rounded w-full"
                       required
-                    />
+                    >
+                      <option value="">-- Chọn danh mục --</option>
+                      {categories.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                   <div>
                     <label className="text-sm font-medium">
@@ -357,20 +314,18 @@ export default function EditProductModal({
               </div>
             </div>
 
-            {/* RIGHT SECTION */}
+            {/* RIGHT */}
             <div className="flex flex-col gap-6">
               <div className="border rounded-xl p-5 shadow-sm bg-gray-50/30">
                 <h3 className="font-semibold mb-3 text-lg">Pricing</h3>
-                <div>
-                  <label className="text-sm font-medium">Price (VNĐ)</label>
-                  <input
-                    name="price"
-                    type="number"
-                    defaultValue={product.price}
-                    className="border p-2 rounded w-full"
-                    required
-                  />
-                </div>
+                <label className="text-sm font-medium">Price (VNĐ)</label>
+                <input
+                  name="price"
+                  type="number"
+                  defaultValue={product.price}
+                  className="border p-2 rounded w-full"
+                  required
+                />
               </div>
 
               <div className="border rounded-xl p-5 shadow-sm bg-gray-50/30">
@@ -379,7 +334,7 @@ export default function EditProductModal({
                 <select
                   name="status"
                   defaultValue={product.status}
-                  className="border p-2 rounded w-full mb-3"
+                  className="border p-2 rounded w-full"
                 >
                   <option value="ACTIVE">Active</option>
                   <option value="INACTIVE">Inactive</option>

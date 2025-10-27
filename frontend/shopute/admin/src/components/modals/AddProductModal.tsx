@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+"use client";
+
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/Button";
 import {
   Dialog,
@@ -7,6 +9,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { categoriesApi, Category } from "@/lib/categoriesApi";
 
 export default function AddProductModal({
   open,
@@ -19,9 +22,7 @@ export default function AddProductModal({
 }) {
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
-
-  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
-  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
 
   // --- HANDLE IMAGE INPUTS ---
   const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -38,6 +39,19 @@ export default function AddProductModal({
   const handleRemoveThumbnail = () => setThumbnailPreview(null);
   const handleRemoveImage = (index: number) =>
     setImagePreviews(imagePreviews.filter((_, i) => i !== index));
+
+  // --- FETCH CATEGORIES FROM API ---
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const data = await categoriesApi.getAll();
+        setCategories(data);
+      } catch (err) {
+        console.error("Failed to load categories:", err);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -57,6 +71,7 @@ export default function AddProductModal({
                 Product Information
               </h3>
 
+              {/* name + brand */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-sm font-medium">Product Name</label>
@@ -79,6 +94,7 @@ export default function AddProductModal({
                 </div>
               </div>
 
+              {/* description */}
               <div className="mt-3">
                 <label className="text-sm font-medium">Description</label>
                 <textarea
@@ -189,15 +205,21 @@ export default function AddProductModal({
               </h3>
 
               <div className="grid grid-cols-2 gap-3">
+                {/* ✅ CATEGORY DROPDOWN */}
                 <div>
-                  <label className="text-sm font-medium">Category ID</label>
-                  <input
+                  <label className="text-sm font-medium">Category</label>
+                  <select
                     name="categoryId"
-                    type="number"
                     className="border p-2 rounded w-full"
-                    placeholder="1"
                     required
-                  />
+                  >
+                    <option value="">Select category</option>
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>
